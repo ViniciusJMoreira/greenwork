@@ -1,36 +1,85 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# 🌿 GreenWork — Gestione Ore Operai
 
-## Getting Started
+Web app mobile-first per la gestione delle ore lavorative di operai su cantieri cooperativi.
 
-First, run the development server:
+## ✨ Funzionalità
+
+- **Login con PIN** — ogni operaio accede con un PIN a 4 cifre
+- **Inserimento ore** — form con cantiere, tipo lavoro, orario inizio/fine (step 30 min), note
+- **Dashboard** — statistiche personali, grafici ore per giorno e distribuzione cantieri
+- **Storico** — registro ore raggruppato per data con possibilità di eliminazione
+- **Google Sheets** — ogni salvataggio scrive automaticamente sulle tabelle Buste Paghe e Contabilità
+- **Email riepilogo** — invio riepilogo ore mensile via email
+
+## 🛠️ Stack
+
+| Tecnologia | Versione |
+|---|---|
+| Next.js | 16.2.1 |
+| React | 19.2.4 |
+| Tailwind CSS | v4 |
+| Recharts | grafici |
+| Nodemailer | email |
+| Google Apps Script | backend Sheets |
+
+## 🚀 Setup
+
+### 1. Installa le dipendenze
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 2. Configura le variabili d'ambiente
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+Crea un file `.env.local` nella root:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```env
+APPS_SCRIPT_URL=https://script.google.com/macros/s/YOUR_ID/exec
+EMAIL_FROM=your@gmail.com
+EMAIL_PASS=your_app_password
+EMAIL_TO=your@gmail.com
+```
 
-## Learn More
+### 3. Google Apps Script
 
-To learn more about Next.js, take a look at the following resources:
+1. Apri il Google Sheet → **Estensioni → Apps Script**
+2. Incolla il codice dal file `CONTEXT.md` (sezione Apps Script)
+3. **Distribuisci → Nuova distribuzione** → Tipo: App web → Accesso: **Chiunque**
+4. Copia l'URL → incolla in `.env.local` come `APPS_SCRIPT_URL`
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 4. Avvia in sviluppo
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+pnpm dev
+```
 
-## Deploy on Vercel
+Apri [http://localhost:3000](http://localhost:3000)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 📁 Struttura
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+app/
+├── login/          → schermata PIN
+├── dashboard/      → app principale (3 tab)
+└── api/
+    ├── save-ore/   → scrive su Google Sheets
+    └── send-email/ → invia email riepilogo
+lib/
+├── data.js         → operai, cantieri, lavori
+├── utils.js        → funzioni tempo e formattazione
+├── stats.js        → aggregazioni per grafici
+├── auth.js         → gestione sessione
+├── hooks.js        → custom React hooks
+└── sheets.js       → chiamata Apps Script
+```
+
+## 🔐 Note di sicurezza
+
+- `.env.local` non viene mai committato (escluso da `.gitignore`)
+- La sessione operaio è gestita via `sessionStorage` (lato client)
+- I dati ore sono persistiti in `localStorage`
+
+## 📄 Licenza
+
+Progetto privato — uso interno cooperativa.

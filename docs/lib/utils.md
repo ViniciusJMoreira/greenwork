@@ -1,0 +1,217 @@
+# `lib/utils.js` — Funzioni pure di formattazione tempo
+
+## Scopo
+
+Funzioni **pure** (nessuno stato, nessun effetto collaterale) per lavorare con orari in formato stringa `"HH:MM"`.
+Tutte queste funzioni sono deterministiche: stesso input → stesso output, sempre.
+
+---
+
+## Funzioni
+
+### `timeToMin(timeStr)`
+
+Converte una stringa orario in minuti totali dall'inizio della giornata.
+
+```js
+timeToMin("07:30")  // → 450   (7 * 60 + 30)
+timeToMin("14:00")  // → 840   (14 * 60 + 0)
+timeToMin("00:00")  // → 0
+timeToMin("")       // → 0     (stringa vuota → 0, non lancia errore)
+timeToMin(null)     // → 0     (null/undefined → 0)
+```
+
+**Parametri:**
+
+| Nome      | Tipo     | Descrizione                  |
+|-----------|----------|------------------------------|
+| `timeStr` | `string` | Orario nel formato `"HH:MM"` |
+
+**Ritorna:** `number` — minuti totali (0–1439)
+
+**Uso interno:** Usata solo da `calcMin()`. Non è necessario chiamarla direttamente dall'esterno.
+
+---
+
+### `calcMin(inizio, fine)`
+
+Calcola i minuti di durata tra due orari.
+Gestisce correttamente il **passaggio a mezzanotte** (es. turno notturno 22:00–02:00).
+
+```js
+calcMin("07:00", "15:00")  // → 480   (8 ore)
+calcMin("14:30", "17:30")  // → 180   (3 ore)
+calcMin("22:00", "02:00")  // → 240   (4 ore, attraversa mezzanotte)
+calcMin("", "15:00")       // → 0     (inizio mancante)
+calcMin("07:00", "")       // → 0     (fine mancante)
+calcMin("10:00", "10:00")  // → 0     (uguale → 0, non negativo)
+```
+
+**Parametri:**
+
+| Nome    | Tipo     | Descrizione                      |
+|---------|----------|----------------------------------|
+| `inizio`| `string` | Orario inizio nel formato `"HH:MM"` |
+| `fine`  | `string` | Orario fine nel formato `"HH:MM"`   |
+
+**Ritorna:** `number` — durata in minuti (≥ 0)
+
+**Come gestisce la mezzanotte:**
+```js
+const diff = end - start
+return diff < 0 ? diff + 24 * 60 : diff
+// Se diff è negativo, significa che fine < inizio → è passata la mezzanotte
+// Aggiunge 1440 minuti (24h) per ottenere la durata corretta
+```
+
+**Chi lo usa:**
+- `lib/stats.js` → calcolo ore totali, ore per giorno, ore per cantiere
+- `app/dashboard/page.jsx` → box "Ore calcolate" nel form, visualizzazione nel Storico
+- `app/api/send-email/route.js` → calcolo ore per l'email
+
+---
+
+### `fmtOre(minuti)`
+
+Formatta minuti in stringa leggibile `"X h"` o `"X h YY min"`.
+
+```js
+fmtOre(0)    // → "0 h"
+fmtOre(60)   // → "1 h"
+fmtOre(90)   // → "1 h 30 min"
+fmtOre(480)  // → "8 h"
+fmtOre(495)  // → "8 h 15 min"
+fmtOre(null) // → "0 h"
+```
+
+**Parametri:**
+
+| Nome     | Tipo     | Descrizione             |
+|----------|----------|-------------------------|
+| `minuti` | `number` | Durata totale in minuti |
+
+**Ritorna:** `string` — formato leggibile per l'utente
+
+**Nota:** I minuti < 10 sono paddati con zero (`"1 h 05 min"`, non `"1 h 5 min"`).
+
+**Chi lo usa:**
+- Stat card "Ore Totali" in Dashboard
+- Badge ore per giorno in Storico
+- Ore calcolate in FormInserimento
+- Email Modal riepilogo
+
+---
+
+### `fmtOreDecimale(minuti)`
+
+Formatta minuti in numero decimale con virgola (formato europeo).
+Usato per Google Sheets e calcoli intermedi.
+
+```js
+fmtOreDecimale(60)   // → "1,00"
+fmtOreDecimale(90)   // → "1,50"
+fmtOreDecimale(480)  // → "8,00"
+fmtOreDecimale(495)  // → "8,25"
+fmtOreDecimale(0)    // → "0,00"
+fmtOreDecimale(null) // → "0,00"
+```
+
+**Parametri:**
+
+| Nome     | Tipo     | Descrizione             |
+|----------|----------|-------------------------|
+| `minuti` | `number` | Durata totale in minuti |
+
+**Ritorna:** `string` — numero con 2 decimali, separatore virgola
+
+> ⚠️ Ritorna una **stringa** con virgola (`","`) non punto.
+> Per usarla come numero float (es. nei grafici recharts), convertire con:
+> ```js
+> parseFloat(fmtOreDecimale(min).replace(',', '.'))
+> ```
+> Questo pattern è usato in `lib/stats.js`.
+
+**Chi lo usa:**
+- `lib/stats.js` → conversione per i grafici
+- `app/dashboard/page.jsx` → campo `totaleOre` inviato all'API
+
+---
+
+### `oggi()`
+
+Ritorna la data odierna nel formato `"DD/MM/YYYY"`.
+
+```js
+oggi()  // → "22/03/2026"  (se oggi è 22 marzo 2026)
+```
+
+**Parametri:** nessuno
+
+**Ritorna:** `string` — data nel formato italiano `"DD/MM/YYYY"`
+
+> ℹ️ Attualmente non usata nel codice principale (il form usa `new Date().toISOString().slice(0, 10)` per ottenere il formato ISO `"YYYY-MM-DD"` compatibile con `<input type="date">`).
+> Disponibile per usi futuri o report.
+
+---
+
+### `fmtData(dataStr)`
+
+Converte una data (ISO o italiana) in formato leggibile `"G Mon YYYY"`.
+
+```js
+fmtData("2026-03-22")  // → "22 Mar 2026"   (da ISO)
+fmtData("22/03/2026")  // → "22 Mar 2026"   (da formato italiano)
+fmtData("")            // → ""              (stringa vuota → stringa vuota)
+```
+
+**Parametri:**
+
+| Nome      | Tipo     | Descrizione                                    |
+|-----------|----------|------------------------------------------------|
+| `dataStr` | `string` | Data in formato `"YYYY-MM-DD"` o `"DD/MM/YYYY"` |
+
+**Ritorna:** `string` — data leggibile con nome mese abbreviato in italiano
+
+**Mesi supportati:** Gen, Feb, Mar, Apr, Mag, Giu, Lug, Ago, Set, Ott, Nov, Dic
+
+**Come distingue i due formati:**
+```js
+if (dataStr.includes('/')) {
+  // formato italiano DD/MM/YYYY
+} else {
+  // formato ISO YYYY-MM-DD
+}
+```
+
+**Chi lo usa:**
+- `Storico` in `app/dashboard/page.jsx` → intestazione di ogni gruppo di giornata
+
+---
+
+## Dipendenze
+
+```
+lib/utils.js  →  (nessuna dipendenza)
+```
+
+Nessun import. File autonomo, non dipende da React né da Next.js.
+Può essere importato ovunque — componenti, API routes, script Node.js.
+
+---
+
+## Principio di design
+
+Tutte queste funzioni sono **pure** nel senso matematico:
+- Nessun accesso a `window`, `localStorage`, `sessionStorage`
+- Nessuna chiamata fetch
+- Nessuno stato React
+- Nessun effetto collaterale
+
+Questo le rende **facilmente testabili** senza mock o setup:
+
+```js
+// Test banale, nessun setup necessario
+assert(calcMin("07:00", "15:00") === 480)
+assert(fmtOre(90) === "1 h 30 min")
+assert(fmtData("2026-03-22") === "22 Mar 2026")
+```
