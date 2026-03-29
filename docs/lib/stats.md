@@ -22,19 +22,29 @@ lib/stats.js  →  lib/utils.js  (calcMin, fmtOreDecimale)
 
 Tutte le funzioni accettano un array di oggetti con questa forma:
 
-```ts
-type Registro = {
-  id:       number | string
-  data:     string    // "YYYY-MM-DD"
-  cantiere: string
-  codice:   string
-  lavoro:   string
-  inizio:   string    // "HH:MM"
-  fine:     string    // "HH:MM"
-  note:     string
-  operaio:  string
+```js
+// Turno normalizzato da normalizzaTurno() in actions.js
+{
+  id:           number,
+  data:         string,   // "YYYY-MM-DD"
+  cantiere:     string,   // nome cantiere
+  codice:       string,   // cod_cantiere da Supabase
+  lavoro:       string,   // tipo lavoro
+  mezzo:        string | null,
+  inizio:       number,   // float8 da Supabase (es. 9.5 = 09:30)
+  fine:         number,   // float8 da Supabase (es. 17.0 = 17:00)
+  ore_totali:   number,   // float8
+  note:         string,
+  lavoro_finito: boolean | null,
+  dipendente_id: number,
+  cantiere_id:  number,
+  lavoro_id:    number,
+  mezzo_id:     number | null,
 }
 ```
+
+> ⚠️ `inizio` e `fine` sono **numeri float8** (non stringhe "HH:MM") perché Supabase li salva come ore decimali.
+> `calcMin()` e `timeToMin()` in `utils.js` gestiscono entrambi i formati.
 
 ---
 
@@ -183,7 +193,7 @@ return Object.entries(map)
 
 **Chi lo usa:**
 - `Dashboard` → `<PieChart>` e barre orizzontali con percentuale
-- `EmailModal` → dettaglio cantieri (poi arricchito con `.codice` da `CANTIERI`)
+- `EmailModal` → dettaglio cantieri con `r.codice` già incluso nel turno normalizzato
 
 ---
 

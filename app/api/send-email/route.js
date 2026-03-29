@@ -1,35 +1,37 @@
-import nodemailer from 'nodemailer'
-import { CANTIERI } from '@/lib/data'
-import { calcMin, fmtOre, fmtOreDecimale } from '@/lib/utils'
+import nodemailer from "nodemailer";
+import { calcMin, fmtOre } from "@/lib/utils";
 
 export async function POST(request) {
   try {
-    const { operaio, registri } = await request.json()
+    const { operaio, registri } = await request.json();
 
-    const minutiTotali = registri.reduce((acc, r) => acc + calcMin(r.inizio, r.fine), 0)
-    const giorniSet = new Set(registri.map(r => r.data))
+    const minutiTotali = registri.reduce(
+      (acc, r) => acc + calcMin(r.inizio, r.fine),
+      0,
+    );
+    const giorniSet = new Set(registri.map((r) => r.data));
 
     // Raggruppa ore per cantiere
-    const cantierMap = {}
-    registri.forEach(r => {
-      const min = calcMin(r.inizio, r.fine)
+    const cantierMap = {};
+    registri.forEach((r) => {
+      const min = calcMin(r.inizio, r.fine);
       if (!cantierMap[r.cantiere]) {
-        const info = CANTIERI.find(c => c.nome === r.cantiere)
-        cantierMap[r.cantiere] = { min: 0, codice: info?.codice ?? '' }
+        cantierMap[r.cantiere] = { min: 0, codice: r.codice ?? "" };
       }
-      cantierMap[r.cantiere].min += min
-    })
+      cantierMap[r.cantiere].min += min;
+    });
 
     const dettaglioCantieri = Object.entries(cantierMap)
       .sort((a, b) => b[1].min - a[1].min)
-      .map(([nome, { min, codice }]) =>
-        `<tr>
+      .map(
+        ([nome, { min, codice }]) =>
+          `<tr>
           <td style="padding:4px 8px">${nome}</td>
           <td style="padding:4px 8px;font-family:monospace">${codice}</td>
           <td style="padding:4px 8px;font-weight:bold">${fmtOre(min)}</td>
-        </tr>`
+        </tr>`,
       )
-      .join('')
+      .join("");
 
     const html = `
       <div style="font-family:sans-serif;max-width:600px;margin:0 auto">
@@ -65,26 +67,29 @@ export async function POST(request) {
           </table>
         </div>
       </div>
-    `
+    `;
 
     const transporter = nodemailer.createTransport({
-      service: 'gmail',
+      service: "gmail",
       auth: {
         user: process.env.EMAIL_FROM,
         pass: process.env.EMAIL_PASS,
       },
-    })
+    });
 
     await transporter.sendMail({
       from: `GreenWork <${process.env.EMAIL_FROM}>`,
-      to: process.env.EMAIL_TO || 'viniciusit.moreira@gmail.com',
+      to: process.env.EMAIL_TO || "viniciusit.moreira@gmail.com",
       subject: `GreenWork — Riepilogo ore di ${operaio}`,
       html,
-    })
+    });
 
-    return Response.json({ success: true })
+    return Response.json({ success: true });
   } catch (err) {
-    console.error('send-email error:', err)
-    return Response.json({ success: false, error: err.message }, { status: 500 })
+    console.error("send-email error:", err);
+    return Response.json(
+      { success: false, error: err.message },
+      { status: 500 },
+    );
   }
 }

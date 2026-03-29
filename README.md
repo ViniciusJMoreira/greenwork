@@ -5,7 +5,7 @@ Web app mobile-first per la gestione delle ore lavorative di operai su cantieri 
 ## ✨ Funzionalità
 
 - **Login con PIN** — ogni operaio accede con un PIN a 4 cifre
-- **Inserimento ore** — form con cantiere, tipo lavoro, orario inizio/fine (step 30 min), note
+- **Inserimento ore** — form con cantiere, tipo lavoro, orario inizio/fine (step 30 min), macchinario, note
 - **Dashboard** — statistiche personali, grafici ore per giorno e distribuzione cantieri
 - **Storico** — registro ore raggruppato per data con possibilità di eliminazione
 - **Google Sheets** — ogni salvataggio scrive automaticamente sulle tabelle Buste Paghe e Contabilità
@@ -13,13 +13,14 @@ Web app mobile-first per la gestione delle ore lavorative di operai su cantieri 
 
 ## 🛠️ Stack
 
-| Tecnologia | Versione |
-|---|---|
-| Next.js | 16.2.1 |
-| React | 19.2.4 |
-| Tailwind CSS | v4 |
-| Recharts | grafici |
-| Nodemailer | email |
+| Tecnologia         | Versione       |
+| ------------------ | -------------- |
+| Next.js            | 16.2.1         |
+| React              | 19.2.4         |
+| Tailwind CSS       | v4             |
+| Supabase           | database       |
+| Recharts           | grafici        |
+| Nodemailer         | email          |
 | Google Apps Script | backend Sheets |
 
 ## 🚀 Setup
@@ -35,6 +36,8 @@ pnpm install
 Crea un file `.env.local` nella root:
 
 ```env
+NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
+SUPABASE_KEY=your_service_role_key
 APPS_SCRIPT_URL=https://script.google.com/macros/s/YOUR_ID/exec
 EMAIL_FROM=your@gmail.com
 EMAIL_PASS=your_app_password
@@ -61,24 +64,31 @@ Apri [http://localhost:3000](http://localhost:3000)
 ```
 app/
 ├── login/          → schermata PIN
-├── dashboard/      → app principale (3 tab)
+├── dashboard/
+│   ├── layout.jsx  → Server Component: fetcha dati da Supabase, fornisce AppContext
+│   └── page.jsx    → Client Component: 3 tab (Dashboard, Inserisci, Storico)
 └── api/
-    ├── save-ore/   → scrive su Google Sheets
-    └── send-email/ → invia email riepilogo
+    └── send-email/ → invia email riepilogo via Nodemailer
+app/_components/
+├── AppContext.jsx  → context globale (operaio, turni, cantieri, lavori, macchinari)
+├── dashboard/      → componenti tab Dashboard (grafici recharts)
+├── form/           → FormInserimento, TimeSelect
+├── header/         → Header con bottone email e logout
+└── storico/        → tab Storico con raggruppamento per data
 lib/
-├── data.js         → operai, cantieri, lavori
-├── utils.js        → funzioni tempo e formattazione
-├── stats.js        → aggregazioni per grafici
-├── auth.js         → gestione sessione
-├── hooks.js        → custom React hooks
-└── sheets.js       → chiamata Apps Script
+├── actions.js      → Server Actions: login, logout, CRUD turni, fetch liste
+├── supabase.js     → client Supabase (service role)
+├── auth.js         → sessione operaio via httpOnly cookie
+├── utils.js        → funzioni pure: calcolo minuti, formattazione orari e date
+├── stats.js        → aggregazioni pure per grafici e statistiche
+└── sheets.js       → chiamata Apps Script per Google Sheets
 ```
 
 ## 🔐 Note di sicurezza
 
 - `.env.local` non viene mai committato (escluso da `.gitignore`)
-- La sessione operaio è gestita via `sessionStorage` (lato client)
-- I dati ore sono persistiti in `localStorage`
+- La sessione operaio è gestita via **httpOnly cookie** (server-side, non accessibile da JS)
+- I dati vengono letti da **Supabase** con service role key (solo server)
 
 ## 📄 Licenza
 

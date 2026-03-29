@@ -1,11 +1,9 @@
 # `lib/` — Documentazione generale
 
 > Documentazione di dettaglio per ogni file:
-> - [`data.md`](./data.md) — Costanti statiche
 > - [`utils.md`](./utils.md) — Funzioni di formattazione tempo
-> - [`stats.md`](./stats.md) — Aggregazioni sui registri
-> - [`auth.md`](./auth.md) — Gestione sessione
-> - [`hooks.md`](./hooks.md) — Custom React hooks
+> - [`stats.md`](./stats.md) — Aggregazioni sui turni
+> - [`auth.md`](./auth.md) — Gestione sessione (httpOnly cookie)
 
 ---
 
@@ -17,11 +15,12 @@ ma non contengono mai calcoli, persistenza o business logic.
 
 ```
 lib/
-├── data.js    → Costanti: OPERAI, CANTIERI, LAVORI, VINICIUS_DATA
-├── utils.js   → Funzioni pure: calcolo minuti, formattazione orari e date
-├── stats.js   → Funzioni pure: aggregazioni sui registri (grafici, statistiche)
-├── auth.js    → Sessione operaio: login, logout, lettura da sessionStorage
-└── hooks.js   → Custom React hooks: useSession(), useRegistri()
+├── actions.js  → Server Actions: login, logout, CRUD turni, fetch cantieri/lavori/macchinari
+├── supabase.js → client Supabase inizializzato con service role key
+├── auth.js     → sessione operaio via httpOnly cookie (next/headers)
+├── utils.js    → funzioni pure: calcolo minuti, formattazione orari e date
+├── stats.js    → funzioni pure: aggregazioni sui turni (grafici, statistiche)
+└── sheets.js   → fetch verso Google Apps Script per scrittura su Sheets
 ```
 
 ---
@@ -29,190 +28,120 @@ lib/
 ## Architettura a strati
 
 ```
-┌─────────────────────────────────────────────────┐
-│              app/ (React Components)             │
-│   page.jsx usa hook e funzioni pure da lib/      │
-└───────────────────┬─────────────────────────────┘
+┌─────────────────────────────────────────────────────┐
+│           app/ (React Components)                    │
+│   useApp() → dati da AppContext                      │
+└───────────────────┬─────────────────────────────────┘
                     │ importa
-┌───────────────────▼─────────────────────────────┐
-│                  lib/hooks.js                    │
-│   useSession() — useRegistri()                   │
-│   Stato React + side effects (storage, router)   │
-└───────┬───────────────────────┬─────────────────┘
-        │ importa               │ importa
-┌───────▼───────┐       ┌───────▼───────┐
-│  lib/auth.js  │       │  lib/data.js  │
-│  sessionStorage│       │  VINICIUS_DATA│
-└───────┬───────┘       └───────────────┘
-        │ importa
-┌───────▼───────────────────────────────────────┐
-│               lib/stats.js                    │
-│  getStats() getOrePerGiorno() getPieData()    │
-│  getStoricoGruppi()                           │
-└───────────────┬───────────────────────────────┘
-                │ importa
-┌───────────────▼───────────────────────────────┐
-│               lib/utils.js                    │
-│  timeToMin() calcMin() fmtOre()               │
-│  fmtOreDecimale() oggi() fmtData()            │
-└───────────────────────────────────────────────┘
-                │ importa
-┌───────────────▼───────────────────────────────┐
-│               lib/data.js                     │
-│  OPERAI, CANTIERI, LAVORI, VINICIUS_DATA      │
-└───────────────────────────────────────────────┘
+┌───────────────────▼─────────────────────────────────┐
+│         app/_components/AppContext.jsx               │
+│   AppProvider — fornisce operaio, turni, cantieri,   │
+│   lavori, macchinari, tab, showEmail                 │
+└───────────────────┬─────────────────────────────────┘
+                    │ riceve props da
+┌───────────────────▼─────────────────────────────────┐
+│         app/dashboard/layout.jsx (Server Component)  │
+│   readSessionCookie() + getCantieri() + getLavori()  │
+│   + getMacchinari() + getTurniByDipendente()         │
+└───────────────────┬─────────────────────────────────┘
+                    │ chiama
+┌───────────────────▼─────────────────────────────────┐
+│                lib/actions.js                        │
+│   Server Actions — loginByPin, logout, insertTurno,  │
+│   deleteTurno, getCantieri, getLavori, getMacchinari │
+└────────┬─────────────────────────┬──────────────────┘
+         │ importa                 │ importa
+┌────────▼────────┐       ┌────────▼────────┐
+│  lib/supabase.js│       │   lib/auth.js   │
+│  client Supabase│       │  httpOnly cookie │
+└─────────────────┘       └─────────────────┘
+                    │ importa
+┌───────────────────▼─────────────────────────────────┐
+│               lib/stats.js                           │
+│  getStats() getOrePerGiorno() getPieData()           │
+│  getStoricoGruppi()                                  │
+└───────────────────┬─────────────────────────────────┘
+                    │ importa
+┌───────────────────▼─────────────────────────────────┐
+│               lib/utils.js                           │
+│  timeToMin() calcMin() fmtOre()                      │
+│  fmtOreDecimale() minToDecimal() oggi() fmtData()    │
+└─────────────────────────────────────────────────────┘
 ```
 
-**Regola fondamentale:** le dipendenze vanno solo dall'alto verso il basso.
-`data.js` non importa niente. `utils.js` non importa `data.js`. Nessuna dipendenza circolare.
+**Regola fondamentale:** le dipendenze vanno solo dall'alto verso il basso. Nessuna dipendenza circolare.
 
 ---
 
 ## Responsabilità di ogni file
 
-### `data.js` — Le costanti
+### `actions.js` — Server Actions
 
-**Cosa fa:** Definisce i dati di dominio fissi: chi sono gli operai, quali cantieri esistono,
-quali tipi di lavoro ci sono, e i dati reali di Vinicius per il demo.
+**Cosa fa:** Tutte le operazioni lato server: autenticazione, lettura/scrittura dati Supabase, scrittura su Google Sheets.
+Marcato `"use server"` — eseguito solo sul server, mai nel browser.
 
-**Non fa:** Nessun calcolo, nessuna logica, nessun effetto.
+**Funzioni principali:**
 
-**Regola:** Se aggiunta un cantiere, un operaio, o un tipo di lavoro → si modifica solo qui.
-Tutto il resto si aggiorna automaticamente.
-
-**Tipo chiave:**
-```ts
-type Operaio  = { nome: string, pin: string }
-type Cantiere = { nome: string, codice: string }
-type Registro = { id, data, cantiere, codice, lavoro, inizio, fine, note, operaio }
-```
-
----
-
-### `utils.js` — Il motore del tempo
-
-**Cosa fa:** Converte e formatta orari nel formato `"HH:MM"`.
-Funzioni pure al 100% — nessuno stato, nessun import esterno.
-
-**Funzioni:**
-
-| Funzione              | Input             | Output            | Esempio                        |
-|-----------------------|-------------------|-------------------|--------------------------------|
-| `timeToMin(str)`      | `"HH:MM"`         | `number` (minuti) | `"07:30"` → `450`              |
-| `calcMin(ini, fin)`   | `"HH:MM"`, `"HH:MM"` | `number`       | `("07:00","15:00")` → `480`    |
-| `fmtOre(min)`         | `number`          | `string`          | `90` → `"1 h 30 min"`          |
-| `fmtOreDecimale(min)` | `number`          | `string`          | `90` → `"1,50"`                |
-| `oggi()`              | —                 | `string`          | → `"22/03/2026"`               |
-| `fmtData(str)`        | `string` (ISO o IT)| `string`         | `"2026-03-22"` → `"22 Mar 2026"`|
+| Funzione | Descrizione |
+|----------|-------------|
+| `loginByPin(pin)` | Verifica PIN su Supabase, salva cookie sessione |
+| `logout()` | Cancella cookie, redirect a `/login` |
+| `getCantieri()` | Lista cantieri ordinata A-Z |
+| `getLavori()` | Lista tipi lavoro ordinata A-Z |
+| `getMacchinari()` | Lista macchinari ordinata A-Z |
+| `insertTurno(turno)` | Inserisce turno in Supabase + scrive su Sheets |
+| `deleteTurno(id)` | Elimina turno da Supabase |
+| `getTurniByDipendente(id)` | Fetcha turni con join, normalizzati |
 
 ---
 
-### `stats.js` — Le aggregazioni
+### `supabase.js` — Client database
 
-**Cosa fa:** Trasforma un array di registri in strutture dati pronte per i componenti
-(grafici, stat card, tabelle raggruppate). Funzioni pure — nessuno stato.
-
-**Funzioni:**
-
-| Funzione                        | Produce                                  | Usato in              |
-|---------------------------------|------------------------------------------|-----------------------|
-| `getStats(registri)`            | `{ minutiTotali, giorniSet, giorniLavorati, numCantieri }` | Stat card, EmailModal |
-| `getOrePerGiorno(registri, n)`  | `[{ data, ore }]` — ultimi N giorni      | BarChart              |
-| `getPieData(registri)`          | `[{ nome, min, ore }]` — per cantiere    | PieChart, barre, email|
-| `getStoricoGruppi(registri)`    | `[{ data, records[], totMin }]`          | Tab Storico           |
-
-**Vantaggio chiave:** `EmailModal` e `Dashboard` usano entrambi `getPieData()` —
-la logica di aggregazione è scritta una volta sola.
+**Cosa fa:** Esporta il client Supabase inizializzato con `SUPABASE_KEY` (service role).
+**Solo server** — non usare in componenti client.
 
 ---
 
-### `auth.js` — La sessione
+### `auth.js` — Sessione operaio
 
-**Cosa fa:** Incapsula tutto ciò che tocca `sessionStorage['operaio']`.
-Un solo posto per cambiare come funziona il login/logout.
+**Cosa fa:** Legge/scrive/cancella l'httpOnly cookie `gw_operaio` via `next/headers`.
+La sessione è gestita **server-side** — non accessibile da JavaScript nel browser.
 
-**Funzioni:**
-
-| Funzione             | Descrizione                                         |
-|----------------------|-----------------------------------------------------|
-| `findByPin(pin)`     | Cerca operaio per PIN → oggetto o `null`            |
-| `saveSession(op)`    | Scrive operaio in sessionStorage (JSON)             |
-| `readSession()`      | Legge operaio da sessionStorage — sicura per SSR    |
-| `clearSession()`     | Rimuove operaio da sessionStorage (logout)          |
-
-**Nota SSR:** `readSession()` controlla `typeof window === 'undefined'` e ritorna
-`null` sul server invece di lanciare un errore. Le altre funzioni (`saveSession`,
-`clearSession`) vengono chiamate solo da event handler — mai durante SSR.
+**Funzioni:** `saveSessionCookie(operaio)`, `readSessionCookie()`, `clearSessionCookie()`
 
 ---
 
-### `hooks.js` — Lo stato React
+### `utils.js` — Funzioni pure di tempo
 
-**Cosa fa:** Due custom hook che collegano la logica `lib/` con lo stato React.
-Permettono ai componenti di avere dati reattivi senza gestire direttamente lo storage.
-
-**Hook:**
-
-**`useSession()`**
-```js
-const { operaio, esci } = useSession()
-```
-- Legge `sessionStorage` una volta al mount (lazy initializer)
-- Reindirizza a `/login` se non autenticato (`useEffect`)
-- Espone `esci()` che chiama `clearSession()` + redirect
-
-**`useRegistri()`**
-```js
-const { registri, aggiungi, rimuovi } = useRegistri()
-```
-- Carica da `localStorage` al mount (lazy initializer)
-- Se primo accesso + Vinicius → seed con `VINICIUS_DATA`
-- `aggiungi(record)` → prepend + salva su localStorage
-- `rimuovi(id)` → filtra + salva su localStorage
+**Cosa fa:** Converte e formatta orari. Funzioni pure al 100%.
+Accetta sia stringhe `"HH:MM"` che numeri `float8` (dal DB Supabase).
 
 ---
 
-## Come si usa in `app/dashboard/page.jsx`
+### `stats.js` — Aggregazioni
 
-```jsx
-// Tutto lo stato dell'app in 2 righe:
-const { operaio, esci }     = useSession()
-const { registri, aggiungi, rimuovi } = useRegistri()
-
-// I calcoli per i grafici, zero stato:
-const stats    = getStats(registri)
-const pieData  = getPieData(registri)
-const gruppi   = getStoricoGruppi(registri)
-```
-
-Il componente principale fa solo coordinamento — non contiene calcoli né storage.
+**Cosa fa:** Trasforma un array di turni normalizzati in strutture dati per i componenti.
+Funzioni pure — nessuno stato, nessun effetto.
 
 ---
 
-## Come si usa in `app/login/page.jsx`
+### `sheets.js` — Google Sheets
 
-```jsx
-// Solo la logica di autenticazione:
-const found = findByPin(pin)        // cerca l'operaio
-if (found) {
-  saveSession(found)                // salva in sessionStorage
-  router.push('/dashboard')         // redirect
-}
-```
+**Cosa fa:** Chiama Google Apps Script via fetch POST per scrivere ore su Sheets.
+Usato da `insertTurno` in `actions.js`. Non bloccante — errori loggati ma non propagati.
 
 ---
 
 ## Dipendenze tra file
 
 ```
-data.js      ←  (nessuna)
+supabase.js  ←  (nessuna)
 utils.js     ←  (nessuna)
+auth.js      ←  next/headers
 stats.js     ←  utils.js
-auth.js      ←  data.js
-hooks.js     ←  data.js, auth.js
+sheets.js    ←  (nessuna, solo fetch)
+actions.js   ←  supabase.js, auth.js, utils.js, sheets.js
 ```
-
-Struttura lineare, zero dipendenze circolari.
 
 ---
 
@@ -221,7 +150,7 @@ Struttura lineare, zero dipendenze circolari.
 | Cosa                              | Dove va invece              |
 |-----------------------------------|-----------------------------|
 | Componenti React (JSX)            | `app/` o `_components/`     |
-| Chiamate fetch alle API           | Nel componente che le usa   |
+| Stato UI (tab, modal)             | `AppContext.jsx`             |
 | Stili CSS / classi Tailwind       | Nel componente              |
 | Configurazione Next.js            | `next.config.js`            |
 | Variabili d'ambiente              | `.env.local`                |
@@ -230,17 +159,5 @@ Struttura lineare, zero dipendenze circolari.
 
 ## Come aggiungere un nuovo cantiere o operaio
 
-**Nuovo cantiere:**
-1. Aprire `lib/data.js`
-2. Aggiungere `{ nome: 'Nome Cantiere', codice: 'CODICE' }` in `CANTIERI`
-3. Il select nel form si aggiorna automaticamente — nessun altro file da modificare
-
-**Nuovo operaio:**
-1. Aprire `lib/data.js`
-2. Aggiungere `{ nome: 'COGNOME NOME', pin: '1234' }` in `OPERAI`
-3. Il login riconosce il nuovo PIN — nessun altro file da modificare
-
-**Nuova tipologia di lavoro:**
-1. Aprire `lib/data.js`
-2. Aggiungere la stringa in `LAVORI`
-3. Il select nel form si aggiorna automaticamente
+**Nuovo cantiere/operaio/lavoro:**
+Aggiungere direttamente nel Table Editor di Supabase — l'app fetcha i dati live ad ogni sessione, nessun file da modificare.

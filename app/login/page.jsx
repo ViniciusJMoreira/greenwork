@@ -2,8 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { OPERAI } from "@/lib/data";
-import { findByPin, saveSession } from "@/lib/auth";
+import { loginByPin } from "@/lib/actions";
 
 function PinDot({ filled }) {
   return (
@@ -23,17 +22,14 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [shake, setShake] = useState(false);
 
-  function handleKey(k) {
+  async function handleKey(k) {
     if (pin.length >= 4) return;
     const next = pin + k;
     setPin(next);
     if (next.length === 4) {
-      const found = findByPin(next);
-      if (found) {
-        setTimeout(() => {
-          saveSession(found);
-          router.push("/dashboard");
-        }, 300);
+      const result = await loginByPin(next);
+      if (result.success) {
+        setTimeout(() => router.push("/dashboard"), 300);
       } else {
         setTimeout(() => {
           setShake(true);
@@ -45,10 +41,6 @@ export default function LoginPage() {
     }
   }
 
-  function loginDemo(operaio) {
-    saveSession(operaio);
-    router.push("/dashboard");
-  }
 
   return (
     <div
@@ -125,21 +117,6 @@ export default function LoginPage() {
           </button>
         </div>
 
-        {/* Demo hints */}
-        <div className="mt-6 p-3 rounded-xl bg-gray-800 border border-gray-700">
-          <p className="text-gray-500 text-xs text-center mb-2">PIN Demo</p>
-          <div className="flex flex-wrap gap-1 justify-center">
-            {OPERAI.slice(0, 4).map((o) => (
-              <button
-                key={o.pin}
-                onClick={() => loginDemo(o)}
-                className="text-xs bg-green-900 text-green-300 px-2 py-1 rounded-lg hover:bg-green-800 transition-all"
-              >
-                {o.nome.split(" ")[0]} ({o.pin})
-              </button>
-            ))}
-          </div>
-        </div>
       </div>
     </div>
   );

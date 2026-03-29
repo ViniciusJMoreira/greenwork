@@ -11,25 +11,28 @@ Tutte queste funzioni sono deterministiche: stesso input → stesso output, semp
 
 ### `timeToMin(timeStr)`
 
-Converte una stringa orario in minuti totali dall'inizio della giornata.
+Converte un orario in minuti totali dall'inizio della giornata.
+Accetta sia stringhe `"HH:MM"` che numeri `float8` (formato usato da Supabase per `orario_inizio`/`orario_fine`).
 
 ```js
-timeToMin("07:30")  // → 450   (7 * 60 + 30)
-timeToMin("14:00")  // → 840   (14 * 60 + 0)
-timeToMin("00:00")  // → 0
-timeToMin("")       // → 0     (stringa vuota → 0, non lancia errore)
+timeToMin("07:30")  // → 450   (stringa "HH:MM")
+timeToMin("14:00")  // → 840
+timeToMin(9.5)      // → 570   (float8 da Supabase: 9.5h * 60)
+timeToMin(14.0)     // → 840
+timeToMin("")       // → 0     (stringa vuota → 0)
 timeToMin(null)     // → 0     (null/undefined → 0)
 ```
 
 **Parametri:**
 
-| Nome      | Tipo     | Descrizione                  |
-|-----------|----------|------------------------------|
-| `timeStr` | `string` | Orario nel formato `"HH:MM"` |
+| Nome      | Tipo              | Descrizione                                   |
+|-----------|-------------------|-----------------------------------------------|
+| `timeStr` | `string \| number` | Orario `"HH:MM"` oppure ore decimali (float8) |
 
 **Ritorna:** `number` — minuti totali (0–1439)
 
-**Uso interno:** Usata solo da `calcMin()`. Non è necessario chiamarla direttamente dall'esterno.
+**Nota Supabase:** `orario_inizio` e `orario_fine` sono salvati come `float8` (es. `9.5` = 09:30).
+`timeToMin` gestisce entrambi i formati — nessuna conversione necessaria prima di chiamarla.
 
 ---
 
@@ -102,10 +105,28 @@ fmtOre(null) // → "0 h"
 
 ---
 
+### `minToDecimal(minuti)`
+
+Converte minuti in ore decimali float con punto (es. `90 → 1.5`).
+Usato per i valori `float8` da inviare a Supabase e Google Sheets.
+
+```js
+minToDecimal(60)   // → 1.0
+minToDecimal(90)   // → 1.5
+minToDecimal(480)  // → 8.0
+minToDecimal(495)  // → 8.25
+minToDecimal(0)    // → 0
+```
+
+**Chi lo usa:**
+- `lib/actions.js` → calcolo `orario_inizio`, `orario_fine`, `ore_totali` prima di inserire su Supabase
+
+---
+
 ### `fmtOreDecimale(minuti)`
 
 Formatta minuti in numero decimale con virgola (formato europeo).
-Usato per Google Sheets e calcoli intermedi.
+Usato per visualizzazione e calcoli intermedi nei grafici.
 
 ```js
 fmtOreDecimale(60)   // → "1,00"
