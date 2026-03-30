@@ -1,6 +1,11 @@
 import { redirect } from "next/navigation";
 import { readSessionCookie } from "@/lib/auth";
-import { getCantieri, getLavori, getMacchinari, getTurniByDipendente } from "@/lib/actions";
+import {
+  getCantieri,
+  getLavori,
+  getMacchinari,
+  getTurniByDipendente,
+} from "@/lib/actions";
 import { AppProvider } from "@/app/_components/AppContext";
 
 export default async function DashboardLayout({ children }) {
@@ -17,7 +22,13 @@ export default async function DashboardLayout({ children }) {
   ]);
 
   return (
-    <AppProvider operaio={operaio} cantieri={cantieri} lavori={lavori} macchinari={macchinari} turni={turni}>
+    <AppProvider
+      operaio={operaio}
+      cantieri={cantieri}
+      lavori={lavori}
+      macchinari={macchinari}
+      turni={turni}
+    >
       {children}
     </AppProvider>
   );

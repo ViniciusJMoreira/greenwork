@@ -8,6 +8,7 @@ import TimeSelect from "./TimeSelect";
 
 // IDs dei lavori che richiedono macchinario
 const LAVORI_CON_MEZZO = [8, 9, 10, 11, 12, 13, 14, 19]; // metti i tuoi ID
+const CODICI_LETTERA = [76, 77, 78, 79, 80];
 
 // Classi e stile comuni per tutti gli input/select del form
 const inputCls =
@@ -38,6 +39,7 @@ function FormInserimento() {
     formState: { isValid },
   } = useForm({
     mode: "onChange",
+    shouldUnregister: true, // campi nascosti vengono rimossi dalla validazione
     defaultValues: {
       data: dataOggi,
       cantiere_id: "",
@@ -51,19 +53,21 @@ function FormInserimento() {
   });
 
   // Valori osservati per calcolo ore e codice lavoro in real-time
+  const cantiere_id = useWatch({ control, name: "cantiere_id" });
   const lavoro_id = useWatch({ control, name: "lavoro_id" });
   const inizio = useWatch({ control, name: "inizio" });
   const fine = useWatch({ control, name: "fine" });
 
   const minutiForm = calcMin(inizio, fine);
-  const showMezzo = LAVORI_CON_MEZZO.includes(Number(lavoro_id));
+  const showMacchinari = LAVORI_CON_MEZZO.includes(Number(lavoro_id));
+  const isAssenza = CODICI_LETTERA.includes(Number(cantiere_id));
 
   useEffect(() => {
-    if (!showMezzo) {
+    if (!showMacchinari) {
       setValue("macchinario_id", "");
       setValue("lavoro_finito", null);
     }
-  }, [showMezzo, setValue]);
+  }, [showMacchinari, setValue]);
 
   async function onSubmit(values) {
     setSaving(true);
@@ -81,8 +85,6 @@ function FormInserimento() {
       macchinarioObj,
       operaio,
     });
-
-    console.log(result);
 
     if (!result.success) {
       setErrore(result.error ?? "Errore salvataggio");
@@ -144,145 +146,148 @@ function FormInserimento() {
         </select>
       </div>
 
-      <div>
-        <label className="block text-xs text-gray-400 mb-1.5">
-          Tipo Lavoro
-        </label>
-        <select
-          {...register("lavoro_id", { required: true })}
-          className={inputCls}
-          style={inputStyle}
-        >
-          <option value="" disabled>
-            Seleziona lavoro
-          </option>
-          {lavori?.map((l) => (
-            <option key={l.id} value={l.id}>
-              {l.lavoro}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {showMezzo && (
-        <div>
-          <label className="block text-xs text-gray-400 mb-1.5">
-            Macchinario
-          </label>
-          <select
-            {...register("macchinario_id")}
-            className={inputCls}
-            style={inputStyle}
-          >
-            <option value="">Seleziona Macchinario</option>
-            {macchinari?.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.mezzo} — {m.cod_mezzo}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
-
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className="block text-xs text-gray-400 mb-1.5">Inizio</label>
-          <Controller
-            name="inizio"
-            control={control}
-            rules={{ required: true }}
-            render={({ field }) => (
-              <TimeSelect
-                value={field.value}
-                onChange={field.onChange}
-                placeholder="Seleziona ora"
-              />
-            )}
-          />
-        </div>
-        <div>
-          <label className="block text-xs text-gray-400 mb-1.5">Fine</label>
-          <Controller
-            name="fine"
-            control={control}
-            rules={{ required: true }}
-            render={({ field }) => (
-              <TimeSelect
-                value={field.value}
-                onChange={field.onChange}
-                placeholder="Seleziona ora"
-                minTime={inizio}
-              />
-            )}
-          />
-        </div>
-      </div>
-
-      {/* Checkbox opzionale: lavoro finito sì/no */}
-      {showMezzo && (
-        <Controller
-          name="lavoro_finito"
-          control={control}
-          render={({ field }) => (
-            <div
-              className="rounded-xl px-4 py-3 flex items-center gap-6"
-              style={{ background: "#374151" }}
+      {!isAssenza && (
+        <>
+          <div>
+            <label className="block text-xs text-gray-400 mb-1.5">
+              Tipo Lavoro
+            </label>
+            <select
+              {...register("lavoro_id", { required: true })}
+              className={inputCls}
+              style={inputStyle}
             >
-              <span className="text-xs text-gray-400 shrink-0">
-                Lavoro finito
-              </span>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={field.value === true}
-                  onChange={() =>
-                    field.onChange(field.value === true ? null : true)
-                  }
-                  className="w-4 h-4 rounded accent-gray-400"
-                />
-                <span className="text-sm text-white">Sì</span>
+              <option value="" disabled>
+                Seleziona lavoro
+              </option>
+              {lavori?.map((l) => (
+                <option key={l.id} value={l.id}>
+                  {l.lavoro}
+                </option>
+              ))}
+            </select>
+          </div>
+          {showMacchinari && (
+            <div>
+              <label className="block text-xs text-gray-400 mb-1.5">
+                Macchinario
               </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={field.value === false}
-                  onChange={() =>
-                    field.onChange(field.value === false ? null : false)
-                  }
-                  className="w-4 h-4 rounded accent-gray-400"
-                />
-                <span className="text-sm text-white">No</span>
-              </label>
+              <select
+                {...register("macchinario_id")}
+                className={inputCls}
+                style={inputStyle}
+              >
+                <option value="">Seleziona Macchinario</option>
+                {macchinari?.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.mezzo} — {m.cod_mezzo}
+                  </option>
+                ))}
+              </select>
             </div>
           )}
-        />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs text-gray-400 mb-1.5">
+                Inizio
+              </label>
+              <Controller
+                name="inizio"
+                control={control}
+                rules={{ required: true }}
+                render={({ field }) => (
+                  <TimeSelect
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder="Seleziona ora"
+                  />
+                )}
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-400 mb-1.5">Fine</label>
+              <Controller
+                name="fine"
+                control={control}
+                rules={{ required: true }}
+                render={({ field }) => (
+                  <TimeSelect
+                    value={field.value}
+                    onChange={field.onChange}
+                    placeholder="Seleziona ora"
+                    minTime={inizio}
+                  />
+                )}
+              />
+            </div>
+          </div>
+          {/* Checkbox opzionale: lavoro finito sì/no */}
+          {showMacchinari && (
+            <Controller
+              name="lavoro_finito"
+              control={control}
+              render={({ field }) => (
+                <div
+                  className="rounded-xl px-4 py-3 flex items-center gap-6"
+                  style={{ background: "#374151" }}
+                >
+                  <span className="text-xs text-gray-400 shrink-0">
+                    Lavoro finito
+                  </span>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={field.value === true}
+                      onChange={() =>
+                        field.onChange(field.value === true ? null : true)
+                      }
+                      className="w-4 h-4 rounded accent-gray-400"
+                    />
+                    <span className="text-sm text-white">Sì</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={field.value === false}
+                      onChange={() =>
+                        field.onChange(field.value === false ? null : false)
+                      }
+                      className="w-4 h-4 rounded accent-gray-400"
+                    />
+                    <span className="text-sm text-white">No</span>
+                  </label>
+                </div>
+              )}
+            />
+          )}
+          {minutiForm > 0 && (
+            <div className="rounded-xl p-4 text-center border border-green-800 bg-green-950">
+              <p className="text-xs text-green-400 mb-1">Ore calcolate</p>
+              <p className="text-3xl font-black text-green-300">
+                {fmtOre(minutiForm)}
+              </p>
+            </div>
+          )}
+          <div>
+            <label className="block text-xs text-gray-400 mb-1.5">
+              Note (opzionale)
+            </label>
+            <textarea
+              {...register("note")}
+              rows={2}
+              placeholder="Aggiungi note..."
+              className={`${inputCls} resize-none`}
+              style={inputStyle}
+            />
+          </div>
+        </>
       )}
-
-      {minutiForm > 0 && (
-        <div className="rounded-xl p-4 text-center border border-green-800 bg-green-950">
-          <p className="text-xs text-green-400 mb-1">Ore calcolate</p>
-          <p className="text-3xl font-black text-green-300">
-            {fmtOre(minutiForm)}
-          </p>
-        </div>
-      )}
-
-      <div>
-        <label className="block text-xs text-gray-400 mb-1.5">
-          Note (opzionale)
-        </label>
-        <textarea
-          {...register("note")}
-          rows={2}
-          placeholder="Aggiungi note..."
-          className={`${inputCls} resize-none`}
-          style={inputStyle}
-        />
-      </div>
 
       <button
         type="submit"
-        disabled={!isValid || minutiForm <= 0 || saving}
+        disabled={
+          saving || (isAssenza ? !cantiere_id : !isValid || minutiForm <= 0)
+        }
         className="w-full py-4 rounded-2xl font-bold text-white text-base transition-all active:scale-95 disabled:opacity-40"
         style={{ background: "#16a34a" }}
       >
