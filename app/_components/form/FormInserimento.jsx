@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useForm, Controller, useWatch, set } from "react-hook-form";
+import { useForm, Controller, useWatch } from "react-hook-form";
 import { calcMin, fmtOre } from "@/lib/utils";
 import { useApp } from "@/app/_components/AppContext";
 import { insertTurno } from "@/lib/actions";
@@ -26,9 +26,8 @@ function FormInserimento() {
   const pad = (n) => String(n).padStart(2, "0");
   const dataOggi = `${oggi.getFullYear()}-${pad(oggi.getMonth() + 1)}-${pad(oggi.getDate())}`;
   const meseMin = `${oggi.getFullYear()}-${pad(oggi.getMonth() + 1)}-01`;
-  const meseMax = new Date(oggi.getFullYear(), oggi.getMonth() + 1, 0)
-    .toISOString()
-    .slice(0, 10);
+  const ultimoGiorno = new Date(oggi.getFullYear(), oggi.getMonth() + 1, 0);
+  const meseMax = `${ultimoGiorno.getFullYear()}-${pad(ultimoGiorno.getMonth() + 1)}-${pad(ultimoGiorno.getDate())}`;
 
   const {
     register,
