@@ -16,7 +16,7 @@ const navLinks = [
 export function TopBar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, resolvedTheme } = useTheme();
   const { operaio } = useApp();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
@@ -48,7 +48,7 @@ export function TopBar() {
           >
             <div className="grid place-items-center">
               <Image
-                src="/logo.png"
+                src={resolvedTheme === "dark" ? "/logo-dark.png" : "/logo.png"}
                 alt="COOP134"
                 width={60}
                 height={60}
