@@ -74,28 +74,16 @@ export default function LoginPage() {
     >
       {/* Logo */}
       <div className="mb-8 text-center">
-        <div className="mb-4 grid place-items-center">
+        <div className="grid place-items-center">
           <Image
-            src="/icon.png"
+            src="/logo.png"
             alt="COOP134"
-            width={60}
-            height={60}
+            width={130}
+            height={130}
             className="object-contain"
             priority
           />
         </div>
-        <h1
-          className="text-2xl font-black tracking-tight"
-          style={{ color: "var(--text)" }}
-        >
-          COOP<span style={{ color: "var(--primary)" }}>134</span>
-        </h1>
-        <p
-          className="text-xs mt-1 tracking-widest uppercase font-medium"
-          style={{ color: "var(--text-muted)" }}
-        >
-          Cooperativa Sociale
-        </p>
       </div>
 
       {/* Card */}

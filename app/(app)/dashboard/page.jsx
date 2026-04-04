@@ -21,7 +21,7 @@ import {
   Wrench,
   HardHat,
 } from "lucide-react";
-import { useApp } from "@/app/_components/AppContext";
+import { useApp } from "@/components/app-context";
 import { getStats, getOrePerGiorno, getPieData } from "@/lib/stats";
 import { calcMin, fmtOre } from "@/lib/utils";
 

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import FormInserimento from "@/app/_components/form/FormInserimento";
+import FormInserimento from "@/components/form/form-inserimento";
 
 export default function InserisciPage() {
   return (
