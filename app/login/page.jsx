@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { useTheme } from "next-themes";
 import { useRouter } from "next/navigation";
 import { loginByPin } from "@/lib/actions";
 import { Delete } from "lucide-react";
@@ -46,6 +47,7 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [shake, setShake] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { resolvedTheme } = useTheme();
 
   async function handleKey(k) {
     if (pin.length >= 4 || loading) return;
@@ -76,7 +78,7 @@ export default function LoginPage() {
       <div className="mb-8 text-center">
         <div className="grid place-items-center">
           <Image
-            src="/logo.png"
+            src={resolvedTheme === "dark" ? "/logo-dark.png" : "/logo.png"}
             alt="COOP134"
             width={130}
             height={130}
@@ -84,6 +86,12 @@ export default function LoginPage() {
             priority
           />
         </div>
+        <p
+          className="text-[10px] font-semibold tracking-[0.4em] leading-none mt-2"
+          style={{ color: "var(--text-muted)" }}
+        >
+          GESTIONE TURNI
+        </p>
       </div>
 
       {/* Card */}
