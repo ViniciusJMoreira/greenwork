@@ -6,14 +6,11 @@ import { useApp } from "@/app/_components/AppContext";
 import { insertTurno } from "@/lib/actions";
 import TimeSelect from "./TimeSelect";
 
-// IDs dei lavori che richiedono macchinario
-const LAVORI_CON_MEZZO = [8, 9, 10, 11, 12, 13, 14, 19]; // metti i tuoi ID
-const CODICI_LETTERA = [76, 77, 78, 79, 80];
-
-// Classi e stile comuni per tutti gli input/select del form
+// ── Stili form condivisi ────────────────────────────────────────────────────
+const fieldCls = "flex flex-col gap-1.5";
+const labelCls = "text-xs font-medium text-[var(--text-muted)]";
 const inputCls =
-  "w-full rounded-xl px-4 py-3 text-white text-sm outline-none focus:ring-2 focus:ring-green-500";
-const inputStyle = { background: "#374151" };
+  "w-full rounded-lg px-3 py-2 text-sm outline-none border transition-colors bg-[var(--bg-subtle)] border-[var(--border)] text-[var(--text)] focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20";
 
 function FormInserimento() {
   const { operaio, cantieri, lavori, macchinari, aggiungiTurno } = useApp();
@@ -38,7 +35,7 @@ function FormInserimento() {
     formState: { isValid },
   } = useForm({
     mode: "onChange",
-    shouldUnregister: true, // campi nascosti vengono rimossi dalla validazione
+    shouldUnregister: true,
     defaultValues: {
       data: dataOggi,
       cantiere_id: "",
@@ -58,32 +55,30 @@ function FormInserimento() {
   const fine = useWatch({ control, name: "fine" });
 
   const minutiForm = calcMin(inizio, fine);
-  const showMacchinari = LAVORI_CON_MEZZO.includes(Number(lavoro_id));
-  const isAssenza = CODICI_LETTERA.includes(Number(cantiere_id));
+  const showMacchinari = lavori.find((l) => l.id === Number(lavoro_id))?.required_mezzo ?? false;
+  const isAssenza = cantieri.find((c) => c.id === Number(cantiere_id))?.isAssenza ?? false;
 
   useEffect(() => {
+    if (isAssenza) {
+      setValue("lavoro_id", "");
+      setValue("inizio", "");
+      setValue("fine", "");
+      setValue("note", "");
+    }
     if (!showMacchinari) {
       setValue("macchinario_id", "");
       setValue("lavoro_finito", null);
     }
-  }, [showMacchinari, setValue]);
+  }, [isAssenza, showMacchinari, setValue]);
 
   async function onSubmit(values) {
     setSaving(true);
     setErrore("");
 
-    const cantiereObj = cantieri.find(
-      (c) => c.id === Number(values.cantiere_id),
-    );
-    const macchinarioObj = macchinari.find(
-      (m) => m.id === Number(values.macchinario_id),
-    );
-    const result = await insertTurno({
-      values,
-      cantiereObj,
-      macchinarioObj,
-      operaio,
-    });
+    const cantiereObj = cantieri.find((c) => c.id === Number(values.cantiere_id));
+    const macchinarioObj = macchinari.find((m) => m.id === Number(values.macchinario_id));
+
+    const result = await insertTurno({ values, cantiereObj, macchinarioObj, operaio });
 
     if (!result.success) {
       setErrore(result.error ?? "Errore salvataggio");
@@ -91,7 +86,6 @@ function FormInserimento() {
       return;
     }
 
-    // Aggiunge il turno normalizzato al context senza reload
     aggiungiTurno(result.data);
 
     reset({
@@ -112,194 +106,159 @@ function FormInserimento() {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <h2 className="text-lg font-bold text-white">Inserisci Ore</h2>
+    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
 
-      <div>
-        <label className="block text-xs text-gray-400 mb-1.5">Data</label>
+      {/* Data */}
+      <div className={fieldCls}>
+        <label className={labelCls}>Data</label>
         <input
           type="date"
           min={meseMin}
           max={meseMax}
           {...register("data", { required: true })}
           className={inputCls}
-          style={inputStyle}
         />
       </div>
 
-      <div>
-        <label className="block text-xs text-gray-400 mb-1.5">Cantiere</label>
-        <select
-          {...register("cantiere_id", { required: true })}
-          className={inputCls}
-          style={inputStyle}
-        >
-          <option value={""} disabled>
-            Seleziona cantiere
-          </option>
+      {/* Cantiere */}
+      <div className={fieldCls}>
+        <label className={labelCls}>Cantiere</label>
+        <select {...register("cantiere_id", { required: true })} className={inputCls}>
+          <option value="" disabled>Seleziona cantiere</option>
           {cantieri?.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.cantiere}
-            </option>
+            <option key={c.id} value={c.id}>{c.cantiere}</option>
           ))}
         </select>
       </div>
 
-      {!isAssenza && (
-        <>
-          <div>
-            <label className="block text-xs text-gray-400 mb-1.5">
-              Tipo Lavoro
-            </label>
-            <select
-              {...register("lavoro_id", { required: true })}
-              className={inputCls}
-              style={inputStyle}
-            >
-              <option value="" disabled>
-                Seleziona lavoro
-              </option>
-              {lavori?.map((l) => (
-                <option key={l.id} value={l.id}>
-                  {l.lavoro}
-                </option>
-              ))}
-            </select>
-          </div>
-          {showMacchinari && (
-            <div>
-              <label className="block text-xs text-gray-400 mb-1.5">
-                Macchinario
-              </label>
-              <select
-                {...register("macchinario_id")}
-                className={inputCls}
-                style={inputStyle}
-              >
-                <option value="">Seleziona Macchinario</option>
-                {macchinari?.map((m) => (
-                  <option key={m.id} value={m.id}>
-                    {m.mezzo} — {m.cod_mezzo}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs text-gray-400 mb-1.5">
-                Inizio
-              </label>
-              <Controller
-                name="inizio"
-                control={control}
-                rules={{ required: true }}
-                render={({ field }) => (
-                  <TimeSelect
-                    value={field.value}
-                    onChange={field.onChange}
-                    placeholder="Seleziona ora"
-                  />
-                )}
-              />
-            </div>
-            <div>
-              <label className="block text-xs text-gray-400 mb-1.5">Fine</label>
-              <Controller
-                name="fine"
-                control={control}
-                rules={{ required: true }}
-                render={({ field }) => (
-                  <TimeSelect
-                    value={field.value}
-                    onChange={field.onChange}
-                    placeholder="Seleziona ora"
-                    minTime={inizio}
-                  />
-                )}
-              />
-            </div>
-          </div>
-          {/* Checkbox opzionale: lavoro finito sì/no */}
-          {showMacchinari && (
+      {/* Tipo lavoro */}
+      {cantiere_id && !isAssenza && (
+        <div className={fieldCls}>
+          <label className={labelCls}>Tipo Lavoro</label>
+          <select {...register("lavoro_id", { required: true })} className={inputCls}>
+            <option value="" disabled>Seleziona lavoro</option>
+            {lavori?.map((l) => (
+              <option key={l.id} value={l.id}>{l.lavoro}</option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {/* Macchinario */}
+      {lavoro_id && showMacchinari && (
+        <div className={fieldCls}>
+          <label className={labelCls}>Macchinario</label>
+          <select {...register("macchinario_id")} className={inputCls}>
+            <option value="">Seleziona macchinario</option>
+            {macchinari?.map((m) => (
+              <option key={m.id} value={m.id}>{m.mezzo} — {m.cod_mezzo}</option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {/* Orario */}
+      {lavoro_id && (
+        <div className="grid grid-cols-2 gap-3">
+          <div className={fieldCls}>
+            <label className={labelCls}>Inizio</label>
             <Controller
-              name="lavoro_finito"
+              name="inizio"
               control={control}
+              rules={{ required: true }}
               render={({ field }) => (
-                <div
-                  className="rounded-xl px-4 py-3 flex items-center gap-6"
-                  style={{ background: "#374151" }}
-                >
-                  <span className="text-xs text-gray-400 shrink-0">
-                    Lavoro finito
-                  </span>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={field.value === true}
-                      onChange={() =>
-                        field.onChange(field.value === true ? null : true)
-                      }
-                      className="w-4 h-4 rounded accent-gray-400"
-                    />
-                    <span className="text-sm text-white">Sì</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={field.value === false}
-                      onChange={() =>
-                        field.onChange(field.value === false ? null : false)
-                      }
-                      className="w-4 h-4 rounded accent-gray-400"
-                    />
-                    <span className="text-sm text-white">No</span>
-                  </label>
-                </div>
+                <TimeSelect value={field.value} onChange={field.onChange} placeholder="Seleziona ora" />
               )}
             />
-          )}
-          {minutiForm > 0 && (
-            <div className="rounded-xl p-4 text-center border border-green-800 bg-green-950">
-              <p className="text-xs text-green-400 mb-1">Ore calcolate</p>
-              <p className="text-3xl font-black text-green-300">
-                {fmtOre(minutiForm)}
-              </p>
-            </div>
-          )}
-          <div>
-            <label className="block text-xs text-gray-400 mb-1.5">
-              Note (opzionale)
-            </label>
-            <textarea
-              {...register("note")}
-              rows={2}
-              placeholder="Aggiungi note..."
-              className={`${inputCls} resize-none`}
-              style={inputStyle}
+          </div>
+          <div className={fieldCls}>
+            <label className={labelCls}>Fine</label>
+            <Controller
+              name="fine"
+              control={control}
+              rules={{ required: true }}
+              render={({ field }) => (
+                <TimeSelect value={field.value} onChange={field.onChange} placeholder="Seleziona ora" minTime={inizio} />
+              )}
             />
           </div>
-        </>
+        </div>
       )}
 
+      {/* Lavoro finito */}
+      {lavoro_id && showMacchinari && (
+        <Controller
+          name="lavoro_finito"
+          control={control}
+          render={({ field }) => (
+            <div
+              className="rounded-lg px-4 py-3 flex items-center gap-6 border"
+              style={{ background: "var(--bg-subtle)", borderColor: "var(--border)" }}
+            >
+              <span className={labelCls + " shrink-0"}>Lavoro finito</span>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={field.value === true}
+                  onChange={() => field.onChange(field.value === true ? null : true)}
+                  className="w-4 h-4 rounded accent-red-600"
+                />
+                <span className="text-sm" style={{ color: "var(--text)" }}>Sì</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={field.value === false}
+                  onChange={() => field.onChange(field.value === false ? null : false)}
+                  className="w-4 h-4 rounded accent-red-600"
+                />
+                <span className="text-sm" style={{ color: "var(--text)" }}>No</span>
+              </label>
+            </div>
+          )}
+        />
+      )}
+
+      {/* Ore calcolate */}
+      {minutiForm > 0 && (
+        <div
+          className="rounded-lg p-4 text-center border-2"
+          style={{ borderColor: "var(--primary)", background: "var(--primary-faint)" }}
+        >
+          <p className="text-xs font-medium mb-1" style={{ color: "var(--primary)" }}>Ore calcolate</p>
+          <p className="text-2xl font-black" style={{ color: "var(--primary)" }}>{fmtOre(minutiForm)}</p>
+        </div>
+      )}
+
+      {/* Note */}
+      {lavoro_id && (
+        <div className={fieldCls}>
+          <label className={labelCls}>Note (opzionale)</label>
+          <textarea
+            {...register("note")}
+            rows={2}
+            placeholder="Aggiungi note..."
+            className={inputCls + " resize-none"}
+          />
+        </div>
+      )}
+
+      {/* Submit */}
       <button
         type="submit"
-        disabled={
-          saving || (isAssenza ? !cantiere_id : !isValid || minutiForm <= 0)
-        }
-        className="w-full py-4 rounded-2xl font-bold text-white text-base transition-all active:scale-95 disabled:opacity-40"
-        style={{ background: "#16a34a" }}
+        disabled={saving || (isAssenza ? !cantiere_id : !isValid || minutiForm <= 0)}
+        className="w-full py-3 rounded-lg font-semibold text-white text-sm transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed mt-1"
+        style={{ background: saving ? "var(--primary-hover)" : "var(--primary)" }}
       >
-        {saving ? "Salvataggio..." : "💾 Salva Ore"}
+        {saving ? "Salvataggio in corso..." : "Salva Ore"}
       </button>
 
+      {/* Feedback */}
       {salvato && (
-        <p className="text-center text-sm font-medium text-green-400">
-          ✓ Salvato con successo!
-        </p>
+        <p className="text-center text-sm font-medium text-emerald-500">✓ Salvato con successo!</p>
       )}
       {errore && (
-        <p className="text-center text-sm font-medium text-red-400">
+        <p className="text-center text-sm font-medium" style={{ color: "var(--destructive)" }}>
           ✗ {errore}
         </p>
       )}

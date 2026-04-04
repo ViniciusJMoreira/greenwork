@@ -1,18 +1,42 @@
 "use client";
-
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { loginByPin } from "@/lib/actions";
+import { Delete } from "lucide-react";
+import Image from "next/image";
 
 function PinDot({ filled }) {
   return (
     <div
-      className={`w-4 h-4 rounded-full border-2 transition-all duration-300 ${
-        filled
-          ? "bg-green-400 border-green-400 scale-110"
-          : "border-green-600"
-      }`}
+      className="w-3 h-3 rounded-full border-2 transition-all duration-200"
+      style={{
+        background: filled ? "var(--primary)" : "transparent",
+        borderColor: filled ? "var(--primary)" : "var(--border-strong)",
+        transform: filled ? "scale(1.15)" : "scale(1)",
+      }}
     />
+  );
+}
+
+function Key({ children, onClick, faint }) {
+  return (
+    <button
+      onClick={onClick}
+      className="h-13 rounded-xl text-base font-semibold transition-all active:scale-95 select-none border"
+      style={{
+        background: "var(--bg-subtle)",
+        borderColor: "var(--border)",
+        color: faint ? "var(--text-muted)" : "var(--text)",
+      }}
+      onMouseEnter={(e) =>
+        (e.currentTarget.style.borderColor = "var(--primary)")
+      }
+      onMouseLeave={(e) =>
+        (e.currentTarget.style.borderColor = "var(--border)")
+      }
+    >
+      {children}
+    </button>
   );
 }
 
@@ -21,103 +45,132 @@ export default function LoginPage() {
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
   const [shake, setShake] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   async function handleKey(k) {
-    if (pin.length >= 4) return;
+    if (pin.length >= 4 || loading) return;
     const next = pin + k;
     setPin(next);
+    setError("");
     if (next.length === 4) {
+      setLoading(true);
       const result = await loginByPin(next);
+      setLoading(false);
       if (result.success) {
-        setTimeout(() => router.push("/dashboard"), 300);
+        router.push("/dashboard");
       } else {
-        setTimeout(() => {
-          setShake(true);
-          setError("PIN non riconosciuto");
-          setPin("");
-          setTimeout(() => setShake(false), 500);
-        }, 200);
+        setShake(true);
+        setError("PIN non riconosciuto");
+        setPin("");
+        setTimeout(() => setShake(false), 500);
       }
     }
   }
 
-
   return (
     <div
       className="min-h-screen flex flex-col items-center justify-center px-4"
-      style={{
-        background:
-          "radial-gradient(ellipse at 60% 20%, #052e16 0%, #111827 60%, #030712 100%)",
-      }}
+      style={{ background: "var(--bg)" }}
     >
-      <div className="mb-10 text-center">
-        <div className="text-5xl mb-3">🌿</div>
-        <h1 className="text-white text-3xl font-black tracking-tight">
-          GreenWork
+      {/* Logo */}
+      <div className="mb-8 text-center">
+        <div className="mb-4 grid place-items-center">
+          <Image
+            src="/icon.png"
+            alt="COOP134"
+            width={60}
+            height={60}
+            className="object-contain"
+            priority
+          />
+        </div>
+        <h1
+          className="text-2xl font-black tracking-tight"
+          style={{ color: "var(--text)" }}
+        >
+          COOP<span style={{ color: "var(--primary)" }}>134</span>
         </h1>
-        <p className="text-green-400 text-sm mt-1 tracking-widest uppercase font-medium">
-          Gestione Ore Operai
+        <p
+          className="text-xs mt-1 tracking-widest uppercase font-medium"
+          style={{ color: "var(--text-muted)" }}
+        >
+          Cooperativa Sociale
         </p>
       </div>
 
+      {/* Card */}
       <div
-        className={`bg-gray-900 border border-gray-800 rounded-3xl p-8 w-full max-w-sm shadow-2xl transition-transform ${
-          shake ? "animate-bounce" : ""
-        }`}
+        className="w-full max-w-xs rounded-2xl border p-6 shadow-lg"
+        style={{
+          background: "var(--bg-card)",
+          borderColor: "var(--border)",
+          animation: shake ? "shake 0.4s ease" : "none",
+        }}
       >
-        <p className="text-gray-400 text-center text-sm mb-6">
-          Inserisci il tuo PIN a 4 cifre
+        <p
+          className="text-sm text-center mb-5"
+          style={{ color: "var(--text-muted)" }}
+        >
+          Inserisci il tuo PIN
         </p>
 
-        {/* PIN display */}
-        <div className="flex justify-center gap-4 mb-8">
+        {/* Dots */}
+        <div className="flex justify-center gap-4 mb-2">
           {[0, 1, 2, 3].map((i) => (
             <PinDot key={i} filled={i < pin.length} />
           ))}
         </div>
 
-        {error && (
-          <p className="text-red-400 text-center text-sm mb-4">{error}</p>
-        )}
-
-        {/* Numpad */}
-        <div className="grid grid-cols-3 gap-3">
-          {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (
-            <button
-              key={n}
-              onClick={() => handleKey(String(n))}
-              className="h-14 rounded-2xl bg-gray-800 text-white text-xl font-bold hover:bg-green-800 active:scale-95 transition-all border border-gray-700"
+        {/* Errore */}
+        <div className="h-6 flex items-center justify-center mb-4">
+          {error && (
+            <p
+              className="text-xs font-medium"
+              style={{ color: "var(--destructive)" }}
             >
+              {error}
+            </p>
+          )}
+        </div>
+
+        {/* Tastiera */}
+        <div className="grid grid-cols-3 gap-2.5">
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (
+            <Key key={n} onClick={() => handleKey(String(n))}>
               {n}
-            </button>
+            </Key>
           ))}
-          <button
+          <Key
+            faint
             onClick={() => {
               setPin((p) => p.slice(0, -1));
               setError("");
             }}
-            className="h-14 rounded-2xl bg-gray-800 text-gray-400 text-sm font-bold hover:bg-gray-700 active:scale-95 transition-all border border-gray-700"
           >
-            ⌫
-          </button>
-          <button
-            onClick={() => handleKey("0")}
-            className="h-14 rounded-2xl bg-gray-800 text-white text-xl font-bold hover:bg-green-800 active:scale-95 transition-all border border-gray-700"
-          >
-            0
-          </button>
-          <button
+            <Delete className="h-4 w-4 mx-auto" />
+          </Key>
+          <Key onClick={() => handleKey("0")}>0</Key>
+          <Key
+            faint
             onClick={() => {
               setPin("");
               setError("");
             }}
-            className="h-14 rounded-2xl bg-gray-800 text-gray-400 text-sm font-bold hover:bg-gray-700 active:scale-95 transition-all border border-gray-700"
           >
             C
-          </button>
+          </Key>
         </div>
-
       </div>
+
+      <style>{`
+        @keyframes shake {
+          0%,100%{transform:translateX(0)}
+          20%{transform:translateX(-7px)}
+          40%{transform:translateX(7px)}
+          60%{transform:translateX(-5px)}
+          80%{transform:translateX(5px)}
+        }
+      `}</style>
     </div>
   );
 }

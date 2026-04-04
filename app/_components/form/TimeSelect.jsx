@@ -15,16 +15,18 @@ function TimeSelect({ value, onChange, placeholder, minTime }) {
     <select
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full rounded-xl px-4 py-3 text-white text-sm outline-none focus:ring-2 focus:ring-green-500"
-      style={{ background: "#374151" }}
+      className="w-full rounded-lg px-3 py-2 text-sm outline-none border transition-colors cursor-pointer"
+      style={{
+        background: "var(--bg-subtle)",
+        borderColor: "var(--border)",
+        color: "var(--text)",
+      }}
+      onFocus={(e) => (e.target.style.borderColor = "var(--primary)")}
+      onBlur={(e) => (e.target.style.borderColor = "var(--border)")}
     >
-      <option value="" disabled>
-        {placeholder}
-      </option>
+      <option value="" disabled>{placeholder}</option>
       {orari.map((t) => (
-        <option key={t} value={t}>
-          {t}
-        </option>
+        <option key={t} value={t}>{t}</option>
       ))}
     </select>
   );
