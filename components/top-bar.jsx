@@ -17,6 +17,10 @@ export function TopBar() {
   const pathname = usePathname();
   const router = useRouter();
   const { theme, setTheme, resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []); // eslint-disable-line react-hooks/set-state-in-effect
+  const logoSrc =
+    mounted && resolvedTheme === "dark" ? "/logo-dark.png" : "/logo.png";
   const { operaio } = useApp();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
@@ -48,7 +52,7 @@ export function TopBar() {
           >
             <div className="grid place-items-center">
               <Image
-                src={resolvedTheme === "dark" ? "/logo-dark.png" : "/logo.png"}
+                src={logoSrc}
                 alt="COOP134"
                 width={60}
                 height={60}
@@ -141,10 +145,10 @@ export function TopBar() {
                     {operaio?.nome} {operaio?.cognome}
                   </p>
                   <p
-                    className="text-xs mt-0.5"
+                    className="text-xs mt-0.5 capitalize"
                     style={{ color: "var(--text-muted)" }}
                   >
-                    Operaio
+                    {operaio?.ruolo}
                   </p>
                 </div>
 

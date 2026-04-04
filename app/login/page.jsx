@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 import { useRouter } from "next/navigation";
 import { loginByPin } from "@/lib/actions";
@@ -48,6 +48,10 @@ export default function LoginPage() {
   const [shake, setShake] = useState(false);
   const [loading, setLoading] = useState(false);
   const { resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []); // eslint-disable-line react-hooks/set-state-in-effect
+  const logoSrc =
+    mounted && resolvedTheme === "dark" ? "/logo-dark.png" : "/logo.png";
 
   async function handleKey(k) {
     if (pin.length >= 4 || loading) return;
@@ -78,7 +82,7 @@ export default function LoginPage() {
       <div className="mb-8 text-center">
         <div className="grid place-items-center">
           <Image
-            src={resolvedTheme === "dark" ? "/logo-dark.png" : "/logo.png"}
+            src={logoSrc}
             alt="COOP134"
             width={130}
             height={130}
@@ -87,7 +91,7 @@ export default function LoginPage() {
           />
         </div>
         <p
-          className="text-[10px] font-semibold tracking-[0.4em] leading-none mt-2"
+          className="text-[10px] font-semibold tracking-[0.5em] leading-none mt-3"
           style={{ color: "var(--text-muted)" }}
         >
           GESTIONE TURNI
