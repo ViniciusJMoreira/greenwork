@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { readSessionCookie } from "@/lib/auth";
 import { getCantieri, getLavori, getMacchinari, getTurniByDipendente } from "@/lib/actions";
-import { AppProvider } from "@/app/_components/AppContext";
+import { AppProvider } from "@/components/app-context";
 import { TopBar } from "@/components/top-bar"
 import { BottomNav } from "@/components/bottom-nav";
 

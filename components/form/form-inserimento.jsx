@@ -2,9 +2,9 @@
 import { useEffect, useState } from "react";
 import { useForm, Controller, useWatch } from "react-hook-form";
 import { calcMin, fmtOre } from "@/lib/utils";
-import { useApp } from "@/app/_components/AppContext";
+import { useApp } from "@/components/app-context";
 import { insertTurno } from "@/lib/actions";
-import TimeSelect from "./TimeSelect";
+import TimeSelect from "./time-select";
 
 // ── Stili form condivisi ────────────────────────────────────────────────────
 const fieldCls = "flex flex-col gap-1.5";

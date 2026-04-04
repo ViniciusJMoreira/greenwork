@@ -1,7 +1,7 @@
 "use client";
 import { useState, useMemo } from "react";
 import { Trash2, SlidersHorizontal, ChevronDown, ChevronUp, FileSearch, Wrench } from "lucide-react";
-import { useApp } from "@/app/_components/AppContext";
+import { useApp } from "@/components/app-context";
 import { deleteTurno } from "@/lib/actions";
 import { calcMin, fmtOre, fmtData } from "@/lib/utils";
 
