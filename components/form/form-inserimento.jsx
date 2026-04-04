@@ -55,8 +55,10 @@ function FormInserimento() {
   const fine = useWatch({ control, name: "fine" });
 
   const minutiForm = calcMin(inizio, fine);
-  const showMacchinari = lavori.find((l) => l.id === Number(lavoro_id))?.required_mezzo ?? false;
-  const isAssenza = cantieri.find((c) => c.id === Number(cantiere_id))?.isAssenza ?? false;
+  const showMacchinari =
+    lavori.find((l) => l.id === Number(lavoro_id))?.required_mezzo ?? false;
+  const isAssenza =
+    cantieri.find((c) => c.id === Number(cantiere_id))?.isAssenza ?? false;
 
   useEffect(() => {
     if (isAssenza) {
@@ -75,10 +77,19 @@ function FormInserimento() {
     setSaving(true);
     setErrore("");
 
-    const cantiereObj = cantieri.find((c) => c.id === Number(values.cantiere_id));
-    const macchinarioObj = macchinari.find((m) => m.id === Number(values.macchinario_id));
+    const cantiereObj = cantieri.find(
+      (c) => c.id === Number(values.cantiere_id),
+    );
+    const macchinarioObj = macchinari.find(
+      (m) => m.id === Number(values.macchinario_id),
+    );
 
-    const result = await insertTurno({ values, cantiereObj, macchinarioObj, operaio });
+    const result = await insertTurno({
+      values,
+      cantiereObj,
+      macchinarioObj,
+      operaio,
+    });
 
     if (!result.success) {
       setErrore(result.error ?? "Errore salvataggio");
@@ -107,7 +118,6 @@ function FormInserimento() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-
       {/* Data */}
       <div className={fieldCls}>
         <label className={labelCls}>Data</label>
@@ -123,10 +133,17 @@ function FormInserimento() {
       {/* Cantiere */}
       <div className={fieldCls}>
         <label className={labelCls}>Cantiere</label>
-        <select {...register("cantiere_id", { required: true })} className={inputCls}>
-          <option value="" disabled>Seleziona cantiere</option>
+        <select
+          {...register("cantiere_id", { required: true })}
+          className={inputCls}
+        >
+          <option value="" disabled>
+            Seleziona cantiere
+          </option>
           {cantieri?.map((c) => (
-            <option key={c.id} value={c.id}>{c.cantiere}</option>
+            <option key={c.id} value={c.id}>
+              {c.cantiere}
+            </option>
           ))}
         </select>
       </div>
@@ -135,10 +152,17 @@ function FormInserimento() {
       {cantiere_id && !isAssenza && (
         <div className={fieldCls}>
           <label className={labelCls}>Tipo Lavoro</label>
-          <select {...register("lavoro_id", { required: true })} className={inputCls}>
-            <option value="" disabled>Seleziona lavoro</option>
+          <select
+            {...register("lavoro_id", { required: true })}
+            className={inputCls}
+          >
+            <option value="" disabled>
+              Seleziona lavoro
+            </option>
             {lavori?.map((l) => (
-              <option key={l.id} value={l.id}>{l.lavoro}</option>
+              <option key={l.id} value={l.id}>
+                {l.lavoro}
+              </option>
             ))}
           </select>
         </div>
@@ -151,7 +175,9 @@ function FormInserimento() {
           <select {...register("macchinario_id")} className={inputCls}>
             <option value="">Seleziona macchinario</option>
             {macchinari?.map((m) => (
-              <option key={m.id} value={m.id}>{m.mezzo} — {m.cod_mezzo}</option>
+              <option key={m.id} value={m.id}>
+                {m.mezzo} — {m.cod_mezzo}
+              </option>
             ))}
           </select>
         </div>
@@ -167,7 +193,11 @@ function FormInserimento() {
               control={control}
               rules={{ required: true }}
               render={({ field }) => (
-                <TimeSelect value={field.value} onChange={field.onChange} placeholder="Seleziona ora" />
+                <TimeSelect
+                  value={field.value}
+                  onChange={field.onChange}
+                  placeholder="Seleziona ora"
+                />
               )}
             />
           </div>
@@ -178,7 +208,12 @@ function FormInserimento() {
               control={control}
               rules={{ required: true }}
               render={({ field }) => (
-                <TimeSelect value={field.value} onChange={field.onChange} placeholder="Seleziona ora" minTime={inizio} />
+                <TimeSelect
+                  value={field.value}
+                  onChange={field.onChange}
+                  placeholder="Seleziona ora"
+                  minTime={inizio}
+                />
               )}
             />
           </div>
@@ -193,26 +228,37 @@ function FormInserimento() {
           render={({ field }) => (
             <div
               className="rounded-lg px-4 py-3 flex items-center gap-6 border"
-              style={{ background: "var(--bg-subtle)", borderColor: "var(--border)" }}
+              style={{
+                background: "var(--bg-subtle)",
+                borderColor: "var(--border)",
+              }}
             >
               <span className={labelCls + " shrink-0"}>Lavoro finito</span>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={field.value === true}
-                  onChange={() => field.onChange(field.value === true ? null : true)}
+                  onChange={() =>
+                    field.onChange(field.value === true ? null : true)
+                  }
                   className="w-4 h-4 rounded accent-red-600"
                 />
-                <span className="text-sm" style={{ color: "var(--text)" }}>Sì</span>
+                <span className="text-sm" style={{ color: "var(--text)" }}>
+                  Sì
+                </span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={field.value === false}
-                  onChange={() => field.onChange(field.value === false ? null : false)}
+                  onChange={() =>
+                    field.onChange(field.value === false ? null : false)
+                  }
                   className="w-4 h-4 rounded accent-red-600"
                 />
-                <span className="text-sm" style={{ color: "var(--text)" }}>No</span>
+                <span className="text-sm" style={{ color: "var(--text)" }}>
+                  No
+                </span>
               </label>
             </div>
           )}
@@ -223,10 +269,23 @@ function FormInserimento() {
       {minutiForm > 0 && (
         <div
           className="rounded-lg p-4 text-center border-2"
-          style={{ borderColor: "var(--primary)", background: "var(--primary-faint)" }}
+          style={{
+            borderColor: "var(--primary)",
+            background: "var(--primary-faint)",
+          }}
         >
-          <p className="text-xs font-medium mb-1" style={{ color: "var(--primary)" }}>Ore calcolate</p>
-          <p className="text-2xl font-black" style={{ color: "var(--primary)" }}>{fmtOre(minutiForm)}</p>
+          <p
+            className="text-xs font-medium mb-1"
+            style={{ color: "var(--primary)" }}
+          >
+            Ore calcolate
+          </p>
+          <p
+            className="text-2xl font-black"
+            style={{ color: "var(--primary)" }}
+          >
+            {fmtOre(minutiForm)}
+          </p>
         </div>
       )}
 
@@ -246,19 +305,28 @@ function FormInserimento() {
       {/* Submit */}
       <button
         type="submit"
-        disabled={saving || (isAssenza ? !cantiere_id : !isValid || minutiForm <= 0)}
+        disabled={
+          saving || (isAssenza ? !cantiere_id : !isValid || minutiForm <= 0)
+        }
         className="w-full py-3 rounded-lg font-semibold text-white text-sm transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed mt-1"
-        style={{ background: saving ? "var(--primary-hover)" : "var(--primary)" }}
+        style={{
+          background: saving ? "var(--primary-hover)" : "var(--primary)",
+        }}
       >
         {saving ? "Salvataggio in corso..." : "Salva Ore"}
       </button>
 
       {/* Feedback */}
       {salvato && (
-        <p className="text-center text-sm font-medium text-emerald-500">✓ Salvato con successo!</p>
+        <p className="text-center text-sm font-medium text-emerald-500">
+          ✓ Salvato con successo!
+        </p>
       )}
       {errore && (
-        <p className="text-center text-sm font-medium" style={{ color: "var(--destructive)" }}>
+        <p
+          className="text-center text-sm font-medium"
+          style={{ color: "var(--destructive)" }}
+        >
           ✗ {errore}
         </p>
       )}
