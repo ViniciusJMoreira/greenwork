@@ -39,6 +39,7 @@ e inviati via email di riepilogo a viniciusit.moreira@gmail.com.
 **Next.js 16** — Leggi `node_modules/next/dist/docs/` prima di scrivere codice.
 
 **Tailwind v4** — Completamente diverso dalla v3:
+
 - ❌ NON esiste più `tailwind.config.js`
 - ❌ NON si usa `@tailwind base/components/utilities`
 - ✅ Import nel CSS globale: `@import "tailwindcss"`
@@ -46,12 +47,14 @@ e inviati via email di riepilogo a viniciusit.moreira@gmail.com.
 - ✅ PostCSS plugin: `@tailwindcss/postcss`
 
 **React 19 + Compiler** — `babel-plugin-react-compiler` attivo:
+
 - ❌ NON scrivere `useMemo` / `useCallback` manualmente
 - ❌ NON chiamare `setState` direttamente nel body di `useEffect` → lint error `react-hooks/set-state-in-effect`
   - Eccezione legittima: lettura da storage esterno (localStorage/sessionStorage) → `// eslint-disable-line react-hooks/set-state-in-effect`
 - ✅ Il compilatore ottimizza automaticamente
 
 **JavaScript puro**:
+
 - ❌ Nessun tipo, nessuna interface, nessun `type`, nessun generic
 - ❌ Nessun file `.ts` o `.tsx`
 - ✅ Solo `.js` e `.jsx`
@@ -62,25 +65,38 @@ e inviati via email di riepilogo a viniciusit.moreira@gmail.com.
 
 L'app usa un **tema dark custom** con colori inline via `style={{}}`, **non** le classi verde/grigio di Catalyst.
 
-| Elemento             | Colore / valore          |
-|----------------------|--------------------------|
-| Sfondo pagina        | `#030712`                |
-| Card / pannelli      | `#1f2937`                |
-| Header / navbar      | `#111827`                |
-| Input / select       | `#374151`                |
-| Bottone primario     | `#16a34a` (verde)        |
-| Testo principale     | `white`                  |
-| Testo secondario     | `#9ca3af` (gray-400)     |
-| Accento verde        | `#4ade80`                |
+| Elemento         | Colore / valore      |
+| ---------------- | -------------------- |
+| Sfondo pagina    | `#030712`            |
+| Card / pannelli  | `#1f2937`            |
+| Header / navbar  | `#111827`            |
+| Input / select   | `#374151`            |
+| Bottone primario | `#16a34a` (verde)    |
+| Testo principale | `white`              |
+| Testo secondario | `#9ca3af` (gray-400) |
+| Accento verde    | `#4ade80`            |
 
 Colori grafici (PIE_COLORS in dashboard):
+
 ```js
-["#16a34a","#15803d","#166534","#4ade80","#86efac","#22c55e","#bbf7d0","#dcfce7","#6ee7b7","#a7f3d0"]
+[
+  "#16a34a",
+  "#15803d",
+  "#166534",
+  "#4ade80",
+  "#86efac",
+  "#22c55e",
+  "#bbf7d0",
+  "#dcfce7",
+  "#6ee7b7",
+  "#a7f3d0",
+];
 ```
 
 ### Schermate implementate
 
 **1. Login** (`/login`)
+
 - Sfondo dark con gradiente radiale verde scuro
 - Logo 🌿, titolo "GreenWork", sottotitolo
 - 4 pallini PIN che si riempiono
@@ -90,17 +106,20 @@ Colori grafici (PIE_COLORS in dashboard):
 - **Nessun Catalyst** — schermata completamente custom dark
 
 **2. Dashboard** (`/dashboard`)
+
 - Topbar sticky: 🌿 + nome operaio + bottone email 📧 + bottone Esci
 - Tab bar sticky: 📊 Dashboard | ➕ Inserisci | 📋 Storico
 - **Nessun Catalyst** — tutto custom dark come il login
 
 **3. Tab Dashboard**
+
 - 3 stat card con icona, valore colorato, label
 - BarChart ore per giorno (ultimi 7) — recharts
 - PieChart distribuzione cantieri — recharts
 - Barre orizzontali con percentuale per cantiere
 
 **4. Tab Inserimento**
+
 - Input HTML nativi stilizzati dark (NON Catalyst)
 - Select cantiere (mostra codice sotto in automatico)
 - Select tipo lavoro
@@ -110,11 +129,13 @@ Colori grafici (PIE_COLORS in dashboard):
 - Bottone "💾 Salva Ore"
 
 **5. Tab Storico**
+
 - Card layout raggruppato per data (ISO desc)
 - Ogni card: cantiere, badge lavoro, orario–orario, ore, note
 - Bottone ✕ per eliminare un record
 
 **6. Modal Email** (bottom sheet su mobile)
+
 - Backdrop blur
 - Riepilogo: operaio, destinatario, ore totali, giorni
 - Dettaglio cantieri con codici e ore
@@ -131,9 +152,10 @@ L'underscore fa sì che Next.js li ignori come route.
 > Disponibili per schermate future (es. admin, impostazioni).
 
 **Import corretto:**
+
 ```jsx
-import { Button } from "@/app/_components/button"
-import { Input } from "@/app/_components/input"
+import { Button } from "@/app/_components/button";
+import { Input } from "@/app/_components/input";
 // ... ecc.
 ```
 
@@ -200,13 +222,14 @@ La cartella `lib/` contiene tutta la logica di dominio separata dall'UI.
 ### `lib/data.js` — Costanti
 
 ```js
-export const OPERAI    // 10 operai { nome, pin }
-export const CANTIERI  // 27 cantieri { nome, codice }
-export const LAVORI    // 26 tipologie di lavoro (array di stringhe)
-export const VINICIUS_DATA  // 42 record reali marzo 2026 — seed demo
+export const OPERAI; // 10 operai { nome, pin }
+export const CANTIERI; // 27 cantieri { nome, codice }
+export const LAVORI; // 26 tipologie di lavoro (array di stringhe)
+export const VINICIUS_DATA; // 42 record reali marzo 2026 — seed demo
 ```
 
 **Tipo record (Registro):**
+
 ```js
 {
   id:       string | number,  // UUID (nuovi) o intero 0-41 (VINICIUS_DATA)
@@ -224,37 +247,37 @@ export const VINICIUS_DATA  // 42 record reali marzo 2026 — seed demo
 ### `lib/utils.js` — Funzioni pure di tempo
 
 ```js
-timeToMin(timeStr)         // "HH:MM" → numero minuti
-calcMin(inizio, fine)      // durata in minuti (gestisce mezzanotte)
-fmtOre(minuti)             // 90 → "1 h 30 min"
-fmtOreDecimale(minuti)     // 90 → "1,50" (stringa con virgola)
-oggi()                     // → "DD/MM/YYYY"
-fmtData(dataStr)           // "2026-03-22" o "22/03/2026" → "22 Mar 2026"
+timeToMin(timeStr); // "HH:MM" → numero minuti
+calcMin(inizio, fine); // durata in minuti (gestisce mezzanotte)
+fmtOre(minuti); // 90 → "1 h 30 min"
+fmtOreDecimale(minuti); // 90 → "1,50" (stringa con virgola)
+oggi(); // → "DD/MM/YYYY"
+fmtData(dataStr); // "2026-03-22" o "22/03/2026" → "22 Mar 2026"
 ```
 
 ### `lib/stats.js` — Aggregazioni pure
 
 ```js
-getStats(registri)              // → { minutiTotali, giorniSet, giorniLavorati, numCantieri }
-getOrePerGiorno(registri, n=7)  // → [{ data: "MM-DD", ore: 8.5 }] per BarChart
-getPieData(registri)            // → [{ nome, min, ore }] per PieChart + barre
-getStoricoGruppi(registri)      // → [{ data, records[], totMin }] per tab Storico
+getStats(registri); // → { minutiTotali, giorniSet, giorniLavorati, numCantieri }
+getOrePerGiorno(registri, (n = 7)); // → [{ data: "MM-DD", ore: 8.5 }] per BarChart
+getPieData(registri); // → [{ nome, min, ore }] per PieChart + barre
+getStoricoGruppi(registri); // → [{ data, records[], totMin }] per tab Storico
 ```
 
 ### `lib/auth.js` — Sessione (sessionStorage)
 
 ```js
-findByPin(pin)       // cerca operaio per PIN → { nome, pin } | null
-saveSession(operaio) // scrive in sessionStorage (solo browser)
-readSession()        // legge da sessionStorage — sicura per SSR (ritorna null sul server)
-clearSession()       // rimuove sessionStorage (logout)
+findByPin(pin); // cerca operaio per PIN → { nome, pin } | null
+saveSession(operaio); // scrive in sessionStorage (solo browser)
+readSession(); // legge da sessionStorage — sicura per SSR (ritorna null sul server)
+clearSession(); // rimuove sessionStorage (logout)
 ```
 
 ### `lib/hooks.js` — Custom React Hooks
 
 ```js
-useSession()   // → { operaio, esci }    — legge sessione, redirect se non auth
-useRegistri()  // → { registri, aggiungi, rimuovi }  — localStorage + seed Vinicius
+useSession(); // → { operaio, esci }    — legge sessione, redirect se non auth
+useRegistri(); // → { registri, aggiungi, rimuovi }  — localStorage + seed Vinicius
 ```
 
 **Pattern importante — hydration:**
@@ -269,8 +292,8 @@ export async function saveOre(payload) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
-  })
-  return res.json()
+  });
+  return res.json();
 }
 ```
 
@@ -283,6 +306,7 @@ export async function saveOre(payload) {
 ### Fogli utilizzati
 
 #### `Tabella per Buste Paghe`
+
 ```
 Col A → DIPENDENTE
 Col B → COD. DIPENDENTE
@@ -291,15 +315,18 @@ Col D → COD. MEZZO
 Col E → giorno 1 … Col AI → giorno 31
 Col AJ → TOT MESE
 ```
+
 **Logica**: trova riga per codice in col C → scrive in colonna `E + giorno - 1` → somma al valore esistente.
 
 #### `Tabella per Contabilità`
+
 ```
 Col A → DIPENDENTE
 Col B → CANTIERE  ← chiave di ricerca
 Col C → giorno 1 … Col AH → giorno 31
 Col AI → TOT MESE
 ```
+
 **Logica**: trova riga per nome cantiere in col B → scrive in colonna `C + giorno - 1` → somma al valore esistente.
 
 ---
@@ -307,6 +334,7 @@ Col AI → TOT MESE
 ## 🔌 Google Apps Script
 
 ### Setup (una tantum)
+
 1. Apri Google Sheets → **Estensioni → Apps Script**
 2. Cancella tutto → incolla il codice → salva `Ctrl+S`
 3. **Distribuisci → Nuova distribuzione** → Tipo: **App web** → Accesso: **Chiunque**
@@ -319,46 +347,48 @@ Col AI → TOT MESE
 ```javascript
 function doPost(e) {
   try {
-    const ss = SpreadsheetApp.openById("1tU5bVH0rdTKapO2HSLTY7xG3hzdu0glh4aS93JjYiz8")
-    const data = JSON.parse(e.postData.contents)
+    const ss = SpreadsheetApp.openById(
+      "1tU5bVH0rdTKapO2HSLTY7xG3hzdu0glh4aS93JjYiz8",
+    );
+    const data = JSON.parse(e.postData.contents);
 
-    const giorno = parseInt(data.data.split("-")[2])
-    const oreDecimali = parseFloat(data.oreDecimali)
+    const giorno = parseInt(data.data.split("-")[2]);
+    const oreDecimali = parseFloat(data.oreDecimali);
 
     // BUSTE PAGHE — cerca per codice cantiere in col C (indice 3)
-    const bustePaghe = ss.getSheetByName("Tabella per Buste Paghe")
-    const colBuste = giorno + 4
-    const rigaBuste = trovaNellaColonna(bustePaghe, 3, data.codice)
+    const bustePaghe = ss.getSheetByName("Tabella per Buste Paghe");
+    const colBuste = giorno + 4;
+    const rigaBuste = trovaNellaColonna(bustePaghe, 3, data.codice);
     if (rigaBuste) {
-      const cella = bustePaghe.getRange(rigaBuste, colBuste)
-      cella.setValue((parseFloat(cella.getValue()) || 0) + oreDecimali)
+      const cella = bustePaghe.getRange(rigaBuste, colBuste);
+      cella.setValue((parseFloat(cella.getValue()) || 0) + oreDecimali);
     }
 
     // CONTABILITÀ — cerca per nome cantiere in col B (indice 2)
-    const contabilita = ss.getSheetByName("Tabella per Contabilità")
-    const colCont = giorno + 2
-    const rigaCont = trovaNellaColonna(contabilita, 2, data.cantiere)
+    const contabilita = ss.getSheetByName("Tabella per Contabilità");
+    const colCont = giorno + 2;
+    const rigaCont = trovaNellaColonna(contabilita, 2, data.cantiere);
     if (rigaCont) {
-      const cella = contabilita.getRange(rigaCont, colCont)
-      cella.setValue((parseFloat(cella.getValue()) || 0) + oreDecimali)
+      const cella = contabilita.getRange(rigaCont, colCont);
+      cella.setValue((parseFloat(cella.getValue()) || 0) + oreDecimali);
     }
 
-    return ContentService
-      .createTextOutput(JSON.stringify({ success: true }))
-      .setMimeType(ContentService.MimeType.JSON)
+    return ContentService.createTextOutput(
+      JSON.stringify({ success: true }),
+    ).setMimeType(ContentService.MimeType.JSON);
   } catch (err) {
-    return ContentService
-      .createTextOutput(JSON.stringify({ success: false, error: err.toString() }))
-      .setMimeType(ContentService.MimeType.JSON)
+    return ContentService.createTextOutput(
+      JSON.stringify({ success: false, error: err.toString() }),
+    ).setMimeType(ContentService.MimeType.JSON);
   }
 }
 
 function trovaNellaColonna(sheet, colIndex, valore) {
-  const valori = sheet.getRange(1, colIndex, sheet.getLastRow(), 1).getValues()
+  const valori = sheet.getRange(1, colIndex, sheet.getLastRow(), 1).getValues();
   for (let i = 0; i < valori.length; i++) {
-    if (String(valori[i][0]).trim() === String(valore).trim()) return i + 1
+    if (String(valori[i][0]).trim() === String(valore).trim()) return i + 1;
   }
-  return null
+  return null;
 }
 ```
 
