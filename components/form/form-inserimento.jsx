@@ -126,7 +126,7 @@ function FormInserimento() {
           min={meseMin}
           max={meseMax}
           {...register("data", { required: true })}
-          className={inputCls}
+          className={inputCls + " appearance-none min-w-0"}
         />
       </div>
 
