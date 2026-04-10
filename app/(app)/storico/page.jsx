@@ -1,5 +1,6 @@
 "use client";
 import { useState, useMemo, useEffect } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import {
   Trash2,
   Pencil,
@@ -40,10 +41,17 @@ function Pill({
   );
 }
 
-function ShiftCard({ record, onDelete, onEdit }) {
+function ShiftCard({ record, onDelete, onEdit, index = 0 }) {
   const min = calcMin(record.inizio, record.fine);
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0, y: 10, scale: 0.98 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{
+        duration: 0.2,
+        delay: index * 0.045,
+        ease: [0.25, 0.1, 0.25, 1],
+      }}
       className="group rounded-xl border px-4 py-3 flex items-start gap-3 transition-colors"
       style={{ background: "var(--bg-card)", borderColor: "var(--border)" }}
       onMouseEnter={(e) =>
@@ -110,7 +118,9 @@ function ShiftCard({ record, onDelete, onEdit }) {
 
       {/* Azioni: modifica + elimina */}
       <div className="flex flex-col gap-1 shrink-0">
-        <button
+        <motion.button
+          whileTap={{ scale: 0.78, rotate: -6 }}
+          transition={{ duration: 0.1 }}
           onClick={() => onEdit(record)}
           className="p-1.5 rounded-lg transition-colors"
           style={{ color: "var(--text-muted)" }}
@@ -125,8 +135,10 @@ function ShiftCard({ record, onDelete, onEdit }) {
           title="Modifica turno"
         >
           <Pencil className="h-3.5 w-3.5" />
-        </button>
-        <button
+        </motion.button>
+        <motion.button
+          whileTap={{ scale: 0.78, rotate: 6 }}
+          transition={{ duration: 0.1 }}
           onClick={() => onDelete(record)}
           className="p-1.5 rounded-lg transition-colors"
           style={{ color: "var(--text-muted)" }}
@@ -141,9 +153,9 @@ function ShiftCard({ record, onDelete, onEdit }) {
           title="Elimina turno"
         >
           <Trash2 className="h-3.5 w-3.5" />
-        </button>
+        </motion.button>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -200,142 +212,195 @@ function FilterInput({ label, value, onChange, type = "date" }) {
   );
 }
 
-/* Dialog di conferma eliminazione — bottom sheet su mobile, modal centrato su desktop */
 /* Dialog modifica turno — bottom sheet su mobile, modal centrato su desktop */
 function EditTurnoDialog({ record, onSuccess, onCancel }) {
-  if (!record) return null;
   return (
-    <div
-      className="fixed inset-0 z-60 flex items-end sm:items-center justify-center"
-      style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}
-      onClick={onCancel}
-    >
-      {/* Card — mb-16 su mobile per stare sopra il bottom nav */}
-      <div
-        className="w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl flex flex-col mb-16 sm:mb-0 max-h-[85vh] overflow-hidden"
-        style={{ background: "var(--bg-card)" }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div
-          className="flex items-center justify-between px-5 py-4 border-b shrink-0"
-          style={{ borderColor: "var(--border)" }}
+    <AnimatePresence>
+      {record && (
+        <motion.div
+          key="edit-backdrop"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          className="fixed inset-0 z-60 flex items-end sm:items-center justify-center"
+          style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}
+          onClick={onCancel}
         >
-          <h2 className="text-base font-bold" style={{ color: "var(--text)" }}>
-            Modifica turno
-          </h2>
-          <button
-            onClick={onCancel}
-            className="p-1.5 rounded-lg transition-colors"
-            style={{ color: "var(--text-muted)" }}
-            onMouseEnter={(e) =>
-              (e.currentTarget.style.background = "var(--bg-subtle)")
-            }
-            onMouseLeave={(e) =>
-              (e.currentTarget.style.background = "transparent")
-            }
+          {/* Card — slide-up mobile / pop-in desktop — mb-16 sopra bottom nav */}
+          <motion.div
+            key="edit-card"
+            initial={{ opacity: 0, y: 80, rotateX: -6, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, rotateX: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 80, rotateX: -6, scale: 0.96 }}
+            transition={{ type: "spring", damping: 26, stiffness: 300 }}
+            style={{ transformPerspective: 900, background: "var(--bg-card)" }}
+            className="w-full sm:max-w-md rounded-2xl flex flex-col mb-16 sm:mb-0 max-h-[85vh] overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
           >
-            ✕
-          </button>
-        </div>
-        {/* Form scrollabile */}
-        <div className="overflow-y-auto p-5">
-          <FormModifica turno={record} onSuccess={onSuccess} />
-        </div>
-      </div>
-    </div>
+            {/* Header */}
+            <div
+              className="flex items-center justify-between px-5 py-4 border-b shrink-0"
+              style={{ borderColor: "var(--border)" }}
+            >
+              <h2
+                className="text-base font-bold"
+                style={{ color: "var(--text)" }}
+              >
+                Modifica turno
+              </h2>
+              <motion.button
+                whileTap={{ scale: 0.82, rotate: 90 }}
+                transition={{ duration: 0.15 }}
+                onClick={onCancel}
+                className="p-1.5 rounded-lg transition-colors"
+                style={{ color: "var(--text-muted)" }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.background = "var(--bg-subtle)")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.background = "transparent")
+                }
+              >
+                ✕
+              </motion.button>
+            </div>
+            {/* Form scrollabile */}
+            <div className="overflow-y-auto p-5">
+              <FormModifica turno={record} onSuccess={onSuccess} />
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
 
+/* Dialog di conferma eliminazione — modal centrato */
 function ConfirmDialog({ record, onConfirm, onCancel, loading = false }) {
-  if (!record) return null;
   return (
-    <div
-      className="fixed inset-0 z-60 flex items-center justify-center"
-      style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}
-      onClick={loading ? undefined : onCancel}
-    >
-      {/* Card — mb-16 su mobile per stare sopra il bottom nav */}
-      <div
-        className="w-full sm:max-w-sm rounded-2xl p-6 mb-16 sm:mb-0 flex flex-col gap-4"
-        style={{ background: "var(--bg-card)" }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Icona + titolo */}
-        <div className="flex flex-col items-center gap-3 text-center">
-          <div
-            className="w-12 h-12 rounded-full flex items-center justify-center"
-            style={{ background: "var(--primary-faint)" }}
+    <AnimatePresence>
+      {record && (
+        <motion.div
+          key="confirm-backdrop"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.18 }}
+          className="fixed inset-0 z-60 flex items-center justify-center"
+          style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}
+          onClick={loading ? undefined : onCancel}
+        >
+          {/* Card — pop-in 3D */}
+          <motion.div
+            key="confirm-card"
+            initial={{ opacity: 0, scale: 0.82, y: 24, rotateX: 16 }}
+            animate={{ opacity: 1, scale: 1, y: 0, rotateX: 0 }}
+            exit={{ opacity: 0, scale: 0.82, y: 24, rotateX: 16 }}
+            transition={{ type: "spring", damping: 22, stiffness: 340 }}
+            style={{ transformPerspective: 800, background: "var(--bg-card)" }}
+            className="w-full sm:max-w-sm rounded-2xl p-6 mb-16 sm:mb-0 flex flex-col gap-4 mx-4"
+            onClick={(e) => e.stopPropagation()}
           >
-            <AlertTriangle
-              className="h-6 w-6"
-              style={{ color: "var(--destructive)" }}
-            />
-          </div>
-          <h2 className="text-base font-bold" style={{ color: "var(--text)" }}>
-            Elimina turno
-          </h2>
-          <p
-            className="text-sm leading-relaxed"
-            style={{ color: "var(--text-muted)" }}
-          >
-            Sei sicuro di voler eliminare il turno{" "}
-            <span className="font-semibold" style={{ color: "var(--text)" }}>
-              &ldquo;{record.cantiere}&rdquo;
-            </span>{" "}
-            del{" "}
-            <span className="font-semibold" style={{ color: "var(--text)" }}>
-              {fmtData(record.data)}
-            </span>
-            ?<br />
-            <span className="text-xs" style={{ color: "var(--text-faint)" }}>
-              Verrà sincronizzato con Google Sheets.
-            </span>
-          </p>
-        </div>
+            {/* Icona + titolo */}
+            <div className="flex flex-col items-center gap-3 text-center">
+              <motion.div
+                initial={{ scale: 0, rotate: -20 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{
+                  type: "spring",
+                  damping: 18,
+                  stiffness: 380,
+                  delay: 0.08,
+                }}
+                className="w-12 h-12 rounded-full flex items-center justify-center"
+                style={{ background: "var(--primary-faint)" }}
+              >
+                <AlertTriangle
+                  className="h-6 w-6"
+                  style={{ color: "var(--destructive)" }}
+                />
+              </motion.div>
+              <h2
+                className="text-base font-bold"
+                style={{ color: "var(--text)" }}
+              >
+                Elimina turno
+              </h2>
+              <p
+                className="text-sm leading-relaxed"
+                style={{ color: "var(--text-muted)" }}
+              >
+                Sei sicuro di voler eliminare il turno{" "}
+                <span
+                  className="font-semibold"
+                  style={{ color: "var(--text)" }}
+                >
+                  &ldquo;{record.cantiere}&rdquo;
+                </span>{" "}
+                del{" "}
+                <span
+                  className="font-semibold"
+                  style={{ color: "var(--text)" }}
+                >
+                  {fmtData(record.data)}
+                </span>
+                ?<br />
+                <span
+                  className="text-xs"
+                  style={{ color: "var(--text-faint)" }}
+                >
+                  Verrà sincronizzato con Google Sheets.
+                </span>
+              </p>
+            </div>
 
-        {/* Bottoni */}
-        <div className="flex gap-3 mt-1">
-          <button
-            onClick={onCancel}
-            disabled={loading}
-            className="flex-1 py-2.5 rounded-xl text-sm font-medium border transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            style={{
-              color: "var(--text-muted)",
-              borderColor: "var(--border)",
-              background: "transparent",
-            }}
-            onMouseEnter={(e) => {
-              if (!loading)
-                e.currentTarget.style.background = "var(--bg-subtle)";
-            }}
-            onMouseLeave={(e) =>
-              (e.currentTarget.style.background = "transparent")
-            }
-          >
-            Annulla
-          </button>
-          <button
-            onClick={onConfirm}
-            disabled={loading}
-            className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
-            style={{ background: "var(--destructive)", color: "white" }}
-            onMouseEnter={(e) => {
-              if (!loading) e.currentTarget.style.opacity = "0.85";
-            }}
-            onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
-          >
-            {loading ? (
-              <span className="flex items-center justify-center gap-2">
-                <Spinner /> Eliminazione...
-              </span>
-            ) : (
-              "Elimina"
-            )}
-          </button>
-        </div>
-      </div>
-    </div>
+            {/* Bottoni */}
+            <div className="flex gap-3 mt-1">
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={onCancel}
+                disabled={loading}
+                className="flex-1 py-2.5 rounded-xl text-sm font-medium border transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                style={{
+                  color: "var(--text-muted)",
+                  borderColor: "var(--border)",
+                  background: "transparent",
+                }}
+                onMouseEnter={(e) => {
+                  if (!loading)
+                    e.currentTarget.style.background = "var(--bg-subtle)";
+                }}
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.background = "transparent")
+                }
+              >
+                Annulla
+              </motion.button>
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={onConfirm}
+                disabled={loading}
+                className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+                style={{ background: "var(--destructive)", color: "white" }}
+                onMouseEnter={(e) => {
+                  if (!loading) e.currentTarget.style.opacity = "0.85";
+                }}
+                onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+              >
+                {loading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <Spinner /> Eliminazione...
+                  </span>
+                ) : (
+                  "Elimina"
+                )}
+              </motion.button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
 
@@ -454,7 +519,8 @@ export default function StoricoPage() {
         style={{ background: "var(--bg-card)", borderColor: "var(--border)" }}
       >
         {/* Header filtri */}
-        <button
+        <motion.button
+          whileTap={{ scale: 0.98 }}
           onClick={() => setOpen((v) => !v)}
           className="w-full flex items-center justify-between px-4 py-3 transition-colors"
           style={{ color: "var(--text)" }}
@@ -480,84 +546,108 @@ export default function StoricoPage() {
               </span>
             )}
           </div>
-          {open ? (
-            <ChevronUp
-              className="h-4 w-4"
-              style={{ color: "var(--text-faint)" }}
-            />
-          ) : (
-            <ChevronDown
-              className="h-4 w-4"
-              style={{ color: "var(--text-faint)" }}
-            />
-          )}
-        </button>
-
-        {/* Body filtri */}
-        {open && (
-          <div
-            className="border-t px-4 pb-4 pt-3"
-            style={{ borderColor: "var(--border)" }}
+          <motion.div
+            animate={{ rotate: open ? 0 : -90 }}
+            transition={{ duration: 0.2, ease: "easeInOut" }}
           >
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <FilterInput
-                label="Dal"
-                value={startDate}
-                onChange={setStartDate}
+            {open ? (
+              <ChevronUp
+                className="h-4 w-4"
+                style={{ color: "var(--text-faint)" }}
               />
-              <FilterInput label="Al" value={endDate} onChange={setEndDate} />
-              <FilterSelect
-                label="Cantiere"
-                value={selectedCantiere}
-                onChange={setSelectedCantiere}
-              >
-                <option value="all">Tutti i cantieri</option>
-                {(cantieri ?? []).map((c) => (
-                  <option key={c.id} value={String(c.id)}>
-                    {c.cantiere}
-                  </option>
-                ))}
-              </FilterSelect>
-              <FilterSelect
-                label="Tipo Lavoro"
-                value={selectedLavoro}
-                onChange={setSelectedLavoro}
-              >
-                <option value="all">Tutti i tipi</option>
-                {(lavori ?? []).map((l) => (
-                  <option key={l.id} value={String(l.id)}>
-                    {l.lavoro}
-                  </option>
-                ))}
-              </FilterSelect>
-            </div>
-            {hasFilters && (
-              <button
-                onClick={reset}
-                className="mt-3 text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors"
-                style={{
-                  color: "var(--text-muted)",
-                  borderColor: "var(--border)",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = "var(--destructive)";
-                  e.currentTarget.style.borderColor = "var(--destructive)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = "var(--text-muted)";
-                  e.currentTarget.style.borderColor = "var(--border)";
-                }}
-              >
-                Azzera filtri ✕
-              </button>
+            ) : (
+              <ChevronDown
+                className="h-4 w-4"
+                style={{ color: "var(--text-faint)" }}
+              />
             )}
-          </div>
-        )}
+          </motion.div>
+        </motion.button>
+
+        {/* Body filtri — accordion animato */}
+        <AnimatePresence initial={false}>
+          {open && (
+            <motion.div
+              key="filters-body"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.24, ease: [0.4, 0, 0.2, 1] }}
+              style={{ overflow: "hidden" }}
+            >
+              <div
+                className="border-t px-4 pb-4 pt-3"
+                style={{ borderColor: "var(--border)" }}
+              >
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <FilterInput
+                    label="Dal"
+                    value={startDate}
+                    onChange={setStartDate}
+                  />
+                  <FilterInput
+                    label="Al"
+                    value={endDate}
+                    onChange={setEndDate}
+                  />
+                  <FilterSelect
+                    label="Cantiere"
+                    value={selectedCantiere}
+                    onChange={setSelectedCantiere}
+                  >
+                    <option value="all">Tutti i cantieri</option>
+                    {(cantieri ?? []).map((c) => (
+                      <option key={c.id} value={String(c.id)}>
+                        {c.cantiere}
+                      </option>
+                    ))}
+                  </FilterSelect>
+                  <FilterSelect
+                    label="Tipo Lavoro"
+                    value={selectedLavoro}
+                    onChange={setSelectedLavoro}
+                  >
+                    <option value="all">Tutti i tipi</option>
+                    {(lavori ?? []).map((l) => (
+                      <option key={l.id} value={String(l.id)}>
+                        {l.lavoro}
+                      </option>
+                    ))}
+                  </FilterSelect>
+                </div>
+                {hasFilters && (
+                  <motion.button
+                    whileTap={{ scale: 0.94 }}
+                    onClick={reset}
+                    className="mt-3 text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors"
+                    style={{
+                      color: "var(--text-muted)",
+                      borderColor: "var(--border)",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = "var(--destructive)";
+                      e.currentTarget.style.borderColor = "var(--destructive)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = "var(--text-muted)";
+                      e.currentTarget.style.borderColor = "var(--border)";
+                    }}
+                  >
+                    Azzera filtri ✕
+                  </motion.button>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Risultati */}
       {gruppi.length === 0 ? (
-        <div
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25 }}
           className="rounded-xl border flex flex-col items-center justify-center py-16 gap-3"
           style={{ background: "var(--bg-card)", borderColor: "var(--border)" }}
         >
@@ -573,7 +663,7 @@ export default function StoricoPage() {
               ? "Prova a modificare i filtri"
               : "Inserisci il tuo primo turno"}
           </p>
-        </div>
+        </motion.div>
       ) : (
         <div className="flex flex-col gap-6">
           {gruppi.map(({ data, records, totMin }) => (
@@ -599,12 +689,13 @@ export default function StoricoPage() {
               </div>
               {/* Cards */}
               <div className="flex flex-col gap-2">
-                {records.map((r) => (
+                {records.map((r, i) => (
                   <ShiftCard
                     key={r.id}
                     record={r}
                     onDelete={handleDelete}
                     onEdit={handleEdit}
+                    index={i}
                   />
                 ))}
               </div>
@@ -613,7 +704,6 @@ export default function StoricoPage() {
         </div>
       )}
 
-      {/* Dialog conferma eliminazione */}
       {/* Dialog modifica turno */}
       <EditTurnoDialog
         record={editRecord}
@@ -621,6 +711,7 @@ export default function StoricoPage() {
         onCancel={() => setEditRecord(null)}
       />
 
+      {/* Dialog conferma eliminazione */}
       <ConfirmDialog
         record={confirmRecord}
         onConfirm={handleConfirmDelete}
