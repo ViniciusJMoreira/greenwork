@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useForm, Controller, useWatch } from "react-hook-form";
 import { calcMin, fmtOre } from "@/lib/utils";
 import { useApp } from "@/components/app-context";
-import { insertTurno } from "@/lib/actions";
+import { updateTurno } from "@/lib/actions";
 import TimeSelect from "./time-select";
 import toast from "react-hot-toast";
 import { Spinner } from "@/components/ui/spinner";
@@ -14,17 +14,12 @@ const labelCls = "text-xs font-medium text-[var(--text-muted)]";
 const inputCls =
   "w-full rounded-lg px-3 py-2 text-sm outline-none border transition-colors bg-[var(--bg-subtle)] border-[var(--border)] text-[var(--text)] focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20";
 
-function FormBody({ onSuccess }) {
-  const { operaio, cantieri, lavori, macchinari, aggiungiTurno } = useApp();
+// turno     — record completo da modificare
+// onSuccess — callback chiamato con il turno aggiornato dopo salvataggio
+function FormModifica({ turno, onSuccess }) {
+  const { cantieri, lavori, macchinari } = useApp();
 
   const [saving, setSaving] = useState(false);
-
-  const oggi = new Date();
-  const pad = (n) => String(n).padStart(2, "0");
-  const dataOggi = `${oggi.getFullYear()}-${pad(oggi.getMonth() + 1)}-${pad(oggi.getDate())}`;
-  const meseMin = `${oggi.getFullYear()}-${pad(oggi.getMonth() + 1)}-01`;
-  const ultimoGiorno = new Date(oggi.getFullYear(), oggi.getMonth() + 1, 0);
-  const meseMax = `${ultimoGiorno.getFullYear()}-${pad(ultimoGiorno.getMonth() + 1)}-${pad(ultimoGiorno.getDate())}`;
 
   const {
     register,
@@ -36,18 +31,18 @@ function FormBody({ onSuccess }) {
     mode: "onChange",
     shouldUnregister: true,
     defaultValues: {
-      data: dataOggi,
-      cantiere_id: "",
-      lavoro_id: "",
-      macchinario_id: "",
-      inizio: "",
-      fine: "",
-      note: "",
-      lavoro_finito: null,
+      data: turno.data ?? "",
+      cantiere_id: String(turno.cantiere_id ?? ""),
+      lavoro_id: String(turno.lavoro_id ?? ""),
+      macchinario_id: String(turno.mezzo_id ?? ""),
+      inizio: turno.inizio ?? "",
+      fine: turno.fine ?? "",
+      note: turno.note ?? "",
+      lavoro_finito: turno.lavoro_finito ?? null,
     },
   });
 
-  // Valori osservati per calcolo ore e codice lavoro in real-time
+  // Valori osservati per logica condizionale e calcolo ore in real-time
   const cantiere_id = useWatch({ control, name: "cantiere_id" });
   const lavoro_id = useWatch({ control, name: "lavoro_id" });
   const inizio = useWatch({ control, name: "inizio" });
@@ -78,18 +73,17 @@ function FormBody({ onSuccess }) {
     const cantiereObj = cantieri.find((c) => c.id === Number(values.cantiere_id));
     const macchinarioObj = macchinari.find((m) => m.id === Number(values.macchinario_id));
 
-    const result = await insertTurno({ values, cantiereObj, macchinarioObj, operaio });
+    const result = await updateTurno(turno.id, { values, cantiereObj, macchinarioObj });
 
     if (!result.success) {
-      toast.error(result.error ?? "Errore salvataggio");
+      toast.error(result.error ?? "Errore modifica turno");
       setSaving(false);
       return;
     }
 
-    aggiungiTurno(result.data);
     setSaving(false);
-    toast.success("Turno salvato con successo!");
-    onSuccess();
+    toast.success("Turno modificato con successo!");
+    onSuccess(result.data);
   }
 
   return (
@@ -99,8 +93,6 @@ function FormBody({ onSuccess }) {
         <label className={labelCls}>Data</label>
         <input
           type="date"
-          min={meseMin}
-          max={meseMax}
           {...register("data", { required: true })}
           className={inputCls + " appearance-none min-w-0"}
         />
@@ -113,13 +105,9 @@ function FormBody({ onSuccess }) {
           {...register("cantiere_id", { required: true })}
           className={inputCls}
         >
-          <option value="" disabled>
-            Seleziona cantiere
-          </option>
+          <option value="" disabled>Seleziona cantiere</option>
           {cantieri?.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.cantiere}
-            </option>
+            <option key={c.id} value={c.id}>{c.cantiere}</option>
           ))}
         </select>
       </div>
@@ -132,13 +120,9 @@ function FormBody({ onSuccess }) {
             {...register("lavoro_id", { required: true })}
             className={inputCls}
           >
-            <option value="" disabled>
-              Seleziona lavoro
-            </option>
+            <option value="" disabled>Seleziona lavoro</option>
             {lavori?.map((l) => (
-              <option key={l.id} value={l.id}>
-                {l.lavoro}
-              </option>
+              <option key={l.id} value={l.id}>{l.lavoro}</option>
             ))}
           </select>
         </div>
@@ -151,9 +135,7 @@ function FormBody({ onSuccess }) {
           <select {...register("macchinario_id")} className={inputCls}>
             <option value="">Seleziona macchinario</option>
             {macchinari?.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.mezzo} — {m.cod_mezzo}
-              </option>
+              <option key={m.id} value={m.id}>{m.mezzo} — {m.cod_mezzo}</option>
             ))}
           </select>
         </div>
@@ -169,11 +151,7 @@ function FormBody({ onSuccess }) {
               control={control}
               rules={{ required: true }}
               render={({ field }) => (
-                <TimeSelect
-                  value={field.value}
-                  onChange={field.onChange}
-                  placeholder="Seleziona ora"
-                />
+                <TimeSelect value={field.value} onChange={field.onChange} placeholder="Seleziona ora" />
               )}
             />
           </div>
@@ -184,12 +162,7 @@ function FormBody({ onSuccess }) {
               control={control}
               rules={{ required: true }}
               render={({ field }) => (
-                <TimeSelect
-                  value={field.value}
-                  onChange={field.onChange}
-                  placeholder="Seleziona ora"
-                  minTime={inizio}
-                />
+                <TimeSelect value={field.value} onChange={field.onChange} placeholder="Seleziona ora" minTime={inizio} />
               )}
             />
           </div>
@@ -204,37 +177,26 @@ function FormBody({ onSuccess }) {
           render={({ field }) => (
             <div
               className="rounded-lg px-4 py-3 flex items-center gap-6 border"
-              style={{
-                background: "var(--bg-subtle)",
-                borderColor: "var(--border)",
-              }}
+              style={{ background: "var(--bg-subtle)", borderColor: "var(--border)" }}
             >
               <span className={labelCls + " shrink-0"}>Lavoro finito</span>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={field.value === true}
-                  onChange={() =>
-                    field.onChange(field.value === true ? null : true)
-                  }
+                  onChange={() => field.onChange(field.value === true ? null : true)}
                   className="w-4 h-4 rounded accent-red-600"
                 />
-                <span className="text-sm" style={{ color: "var(--text)" }}>
-                  Sì
-                </span>
+                <span className="text-sm" style={{ color: "var(--text)" }}>Sì</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={field.value === false}
-                  onChange={() =>
-                    field.onChange(field.value === false ? null : false)
-                  }
+                  onChange={() => field.onChange(field.value === false ? null : false)}
                   className="w-4 h-4 rounded accent-red-600"
                 />
-                <span className="text-sm" style={{ color: "var(--text)" }}>
-                  No
-                </span>
+                <span className="text-sm" style={{ color: "var(--text)" }}>No</span>
               </label>
             </div>
           )}
@@ -245,21 +207,12 @@ function FormBody({ onSuccess }) {
       {minutiForm > 0 && (
         <div
           className="rounded-lg p-4 text-center border-2"
-          style={{
-            borderColor: "var(--primary)",
-            background: "var(--primary-faint)",
-          }}
+          style={{ borderColor: "var(--primary)", background: "var(--primary-faint)" }}
         >
-          <p
-            className="text-xs font-medium mb-1"
-            style={{ color: "var(--primary)" }}
-          >
+          <p className="text-xs font-medium mb-1" style={{ color: "var(--primary)" }}>
             Ore calcolate
           </p>
-          <p
-            className="text-2xl font-black"
-            style={{ color: "var(--primary)" }}
-          >
+          <p className="text-2xl font-black" style={{ color: "var(--primary)" }}>
             {fmtOre(minutiForm)}
           </p>
         </div>
@@ -281,25 +234,14 @@ function FormBody({ onSuccess }) {
       {/* Submit */}
       <button
         type="submit"
-        disabled={
-          saving || (isAssenza ? !cantiere_id : !isValid || minutiForm <= 0)
-        }
+        disabled={saving || (isAssenza ? !cantiere_id : !isValid || minutiForm <= 0)}
         className="w-full py-3 rounded-lg font-semibold text-white text-sm transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed mt-1"
-        style={{
-          background: saving ? "var(--primary-hover)" : "var(--primary)",
-        }}
+        style={{ background: saving ? "var(--primary-hover)" : "var(--primary)" }}
       >
-        {saving ? <span className="flex items-center justify-center gap-2"><Spinner /> Salvataggio...</span> : "Salva Ore"}
+        {saving ? <span className="flex items-center justify-center gap-2"><Spinner /> Salvataggio...</span> : "Salva Modifiche"}
       </button>
-
     </form>
   );
 }
 
-// Wrapper che rimonta FormBody al cambio di formKey — reset completo senza window.reload
-function FormInserimento() {
-  const [formKey, setFormKey] = useState(0);
-  return <FormBody key={formKey} onSuccess={() => setFormKey((k) => k + 1)} />;
-}
-
-export default FormInserimento;
+export default FormModifica;

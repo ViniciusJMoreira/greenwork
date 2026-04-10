@@ -23,6 +23,13 @@ export function AppProvider({ children, operaio, cantieri, lavori, macchinari, t
     setTurni((prev) => prev.filter((t) => t.id !== id));
   }
 
+  // Aggiorna un turno dopo edit riuscito
+  function aggiornaTurno(turnoAggiornato) {
+    setTurni((prev) =>
+      prev.map((t) => (t.id === turnoAggiornato.id ? turnoAggiornato : t)),
+    );
+  }
+
   return (
     <AppContext.Provider value={{
       // UI
@@ -35,7 +42,7 @@ export function AppProvider({ children, operaio, cantieri, lavori, macchinari, t
       lavori,
       macchinari,
       // Turni
-      turni, aggiungiTurno, rimuoviTurno,
+      turni, aggiungiTurno, rimuoviTurno, aggiornaTurno,
     }}>
       {children}
     </AppContext.Provider>
