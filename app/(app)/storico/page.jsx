@@ -2,6 +2,7 @@
 import { useState, useMemo, useEffect } from "react";
 import {
   Trash2,
+  Pencil,
   SlidersHorizontal,
   ChevronDown,
   ChevronUp,
@@ -9,6 +10,9 @@ import {
   Wrench,
   AlertTriangle,
 } from "lucide-react";
+import FormModifica from "@/components/form/form-modifica";
+import toast from "react-hot-toast";
+import { Spinner } from "@/components/ui/spinner";
 import { useApp } from "@/components/app-context";
 import { deleteTurno } from "@/lib/actions";
 import { calcMin, fmtOre, fmtData } from "@/lib/utils";
@@ -36,7 +40,7 @@ function Pill({
   );
 }
 
-function ShiftCard({ record, onDelete }) {
+function ShiftCard({ record, onDelete, onEdit }) {
   const min = calcMin(record.inizio, record.fine);
   return (
     <div
@@ -104,23 +108,41 @@ function ShiftCard({ record, onDelete }) {
         </div>
       </div>
 
-      {/* Delete */}
-      <button
-        onClick={() => onDelete(record)}
-        className="shrink-0 transition-colors p-1.5 rounded-lg"
-        style={{ color: "var(--text-faint)" }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.color = "var(--destructive)";
-          e.currentTarget.style.background = "var(--primary-faint)";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.color = "var(--text-faint)";
-          e.currentTarget.style.background = "transparent";
-        }}
-        title="Elimina turno"
-      >
-        <Trash2 className="h-3.5 w-3.5" />
-      </button>
+      {/* Azioni: modifica + elimina */}
+      <div className="flex flex-col gap-1 shrink-0">
+        <button
+          onClick={() => onEdit(record)}
+          className="p-1.5 rounded-lg transition-colors"
+          style={{ color: "var(--text-muted)" }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = "var(--primary)";
+            e.currentTarget.style.background = "var(--primary-faint)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = "var(--text-muted)";
+            e.currentTarget.style.background = "transparent";
+          }}
+          title="Modifica turno"
+        >
+          <Pencil className="h-3.5 w-3.5" />
+        </button>
+        <button
+          onClick={() => onDelete(record)}
+          className="p-1.5 rounded-lg transition-colors"
+          style={{ color: "var(--text-muted)" }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = "var(--destructive)";
+            e.currentTarget.style.background = "var(--primary-faint)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = "var(--text-muted)";
+            e.currentTarget.style.background = "transparent";
+          }}
+          title="Elimina turno"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
+      </div>
     </div>
   );
 }
@@ -179,13 +201,59 @@ function FilterInput({ label, value, onChange, type = "date" }) {
 }
 
 /* Dialog di conferma eliminazione — bottom sheet su mobile, modal centrato su desktop */
-function ConfirmDialog({ record, onConfirm, onCancel }) {
+/* Dialog modifica turno — bottom sheet su mobile, modal centrato su desktop */
+function EditTurnoDialog({ record, onSuccess, onCancel }) {
+  if (!record) return null;
+  return (
+    <div
+      className="fixed inset-0 z-60 flex items-end sm:items-center justify-center"
+      style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}
+      onClick={onCancel}
+    >
+      {/* Card — mb-16 su mobile per stare sopra il bottom nav */}
+      <div
+        className="w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl flex flex-col mb-16 sm:mb-0 max-h-[85vh] overflow-hidden"
+        style={{ background: "var(--bg-card)" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div
+          className="flex items-center justify-between px-5 py-4 border-b shrink-0"
+          style={{ borderColor: "var(--border)" }}
+        >
+          <h2 className="text-base font-bold" style={{ color: "var(--text)" }}>
+            Modifica turno
+          </h2>
+          <button
+            onClick={onCancel}
+            className="p-1.5 rounded-lg transition-colors"
+            style={{ color: "var(--text-muted)" }}
+            onMouseEnter={(e) =>
+              (e.currentTarget.style.background = "var(--bg-subtle)")
+            }
+            onMouseLeave={(e) =>
+              (e.currentTarget.style.background = "transparent")
+            }
+          >
+            ✕
+          </button>
+        </div>
+        {/* Form scrollabile */}
+        <div className="overflow-y-auto p-5">
+          <FormModifica turno={record} onSuccess={onSuccess} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ConfirmDialog({ record, onConfirm, onCancel, loading = false }) {
   if (!record) return null;
   return (
     <div
       className="fixed inset-0 z-60 flex items-center justify-center"
       style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}
-      onClick={onCancel}
+      onClick={loading ? undefined : onCancel}
     >
       {/* Card — mb-16 su mobile per stare sopra il bottom nav */}
       <div
@@ -230,15 +298,17 @@ function ConfirmDialog({ record, onConfirm, onCancel }) {
         <div className="flex gap-3 mt-1">
           <button
             onClick={onCancel}
-            className="flex-1 py-2.5 rounded-xl text-sm font-medium border transition-colors"
+            disabled={loading}
+            className="flex-1 py-2.5 rounded-xl text-sm font-medium border transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             style={{
               color: "var(--text-muted)",
               borderColor: "var(--border)",
               background: "transparent",
             }}
-            onMouseEnter={(e) =>
-              (e.currentTarget.style.background = "var(--bg-subtle)")
-            }
+            onMouseEnter={(e) => {
+              if (!loading)
+                e.currentTarget.style.background = "var(--bg-subtle)";
+            }}
             onMouseLeave={(e) =>
               (e.currentTarget.style.background = "transparent")
             }
@@ -247,12 +317,21 @@ function ConfirmDialog({ record, onConfirm, onCancel }) {
           </button>
           <button
             onClick={onConfirm}
-            className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-colors"
+            disabled={loading}
+            className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
             style={{ background: "var(--destructive)", color: "white" }}
-            onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.85")}
+            onMouseEnter={(e) => {
+              if (!loading) e.currentTarget.style.opacity = "0.85";
+            }}
             onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
           >
-            Elimina
+            {loading ? (
+              <span className="flex items-center justify-center gap-2">
+                <Spinner /> Eliminazione...
+              </span>
+            ) : (
+              "Elimina"
+            )}
           </button>
         </div>
       </div>
@@ -261,21 +340,23 @@ function ConfirmDialog({ record, onConfirm, onCancel }) {
 }
 
 export default function StoricoPage() {
-  const { turni, rimuoviTurno, cantieri, lavori } = useApp();
+  const { turni, rimuoviTurno, aggiornaTurno, cantieri, lavori } = useApp();
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [selectedCantiere, setSelectedCantiere] = useState("all");
   const [selectedLavoro, setSelectedLavoro] = useState("all");
   const [open, setOpen] = useState(true);
   const [confirmRecord, setConfirmRecord] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+  const [editRecord, setEditRecord] = useState(null);
 
   // Blocca/sblocca scroll body quando il dialog è aperto
   useEffect(() => {
-    document.body.style.overflow = confirmRecord ? "hidden" : "";
+    document.body.style.overflow = confirmRecord || editRecord ? "hidden" : "";
     return () => {
       document.body.style.overflow = "";
     };
-  }, [confirmRecord]);
+  }, [confirmRecord, editRecord]);
 
   const hasFilters =
     startDate ||
@@ -294,12 +375,30 @@ export default function StoricoPage() {
     setConfirmRecord(record);
   }
 
-  // Eseguito dopo conferma — chiama deleteTurno e aggiorna lo stato locale
+  // Eseguito dopo conferma — il dialog rimane aperto con spinner finché l'operazione non è completata
   async function handleConfirmDelete() {
     const record = confirmRecord;
-    setConfirmRecord(null);
+    setDeleting(true);
     const result = await deleteTurno(record.id);
-    if (result.success) rimuoviTurno(record.id);
+    setDeleting(false);
+    if (result.success) {
+      setConfirmRecord(null);
+      rimuoviTurno(record.id);
+      toast.success("Turno eliminato.");
+    } else {
+      toast.error(result.error ?? "Errore durante l'eliminazione");
+    }
+  }
+
+  // Apre il dialog di modifica con il record selezionato
+  function handleEdit(record) {
+    setEditRecord(record);
+  }
+
+  // Chiamato da FormModifica dopo salvataggio riuscito
+  function handleEditSuccess(turnoAggiornato) {
+    aggiornaTurno(turnoAggiornato);
+    setEditRecord(null);
   }
 
   function reset() {
@@ -501,7 +600,12 @@ export default function StoricoPage() {
               {/* Cards */}
               <div className="flex flex-col gap-2">
                 {records.map((r) => (
-                  <ShiftCard key={r.id} record={r} onDelete={handleDelete} />
+                  <ShiftCard
+                    key={r.id}
+                    record={r}
+                    onDelete={handleDelete}
+                    onEdit={handleEdit}
+                  />
                 ))}
               </div>
             </div>
@@ -510,10 +614,18 @@ export default function StoricoPage() {
       )}
 
       {/* Dialog conferma eliminazione */}
+      {/* Dialog modifica turno */}
+      <EditTurnoDialog
+        record={editRecord}
+        onSuccess={handleEditSuccess}
+        onCancel={() => setEditRecord(null)}
+      />
+
       <ConfirmDialog
         record={confirmRecord}
         onConfirm={handleConfirmDelete}
-        onCancel={() => setConfirmRecord(null)}
+        onCancel={() => !deleting && setConfirmRecord(null)}
+        loading={deleting}
       />
     </div>
   );
