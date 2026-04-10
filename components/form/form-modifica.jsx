@@ -14,12 +14,40 @@ const labelCls = "text-xs font-medium text-[var(--text-muted)]";
 const inputCls =
   "w-full rounded-lg px-3 py-2 text-sm outline-none border transition-colors bg-[var(--bg-subtle)] border-[var(--border)] text-[var(--text)] focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20";
 
+// Opzioni ore macchinario: 30 min → 12 h con step 30 min
+const ORE_MEZZO_OPTIONS = Array.from({ length: 24 }, (_, i) => {
+  const val = (i + 1) * 0.5;
+  const h = Math.floor(val);
+  const m = val % 1 !== 0;
+  const label = h === 0 ? "30 min" : m ? `${h} h 30 min` : `${h} h`;
+  return { value: val, label };
+});
+
+// Toggle switch riutilizzabile
+function Switch({ checked, onChange }) {
+  return (
+    <button
+      type="button"
+      onClick={() => onChange(!checked)}
+      className="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-200"
+      style={{ background: checked ? "var(--primary)" : "var(--border-strong)" }}
+    >
+      <span
+        className="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform duration-200"
+        style={{ transform: checked ? "translateX(22px)" : "translateX(2px)" }}
+      />
+    </button>
+  );
+}
+
 // turno     — record completo da modificare
 // onSuccess — callback chiamato con il turno aggiornato dopo salvataggio
 function FormModifica({ turno, onSuccess }) {
   const { cantieri, lavori, macchinari } = useApp();
 
   const [saving, setSaving] = useState(false);
+  // Pre-fillato: switch ON se il turno aveva già un macchinario
+  const [usaMacchinario, setUsaMacchinario] = useState(!!(turno.mezzo_id));
 
   const {
     register,
@@ -35,6 +63,7 @@ function FormModifica({ turno, onSuccess }) {
       cantiere_id: String(turno.cantiere_id ?? ""),
       lavoro_id: String(turno.lavoro_id ?? ""),
       macchinario_id: String(turno.mezzo_id ?? ""),
+      ore_mezzo: turno.ore_mezzo ? String(turno.ore_mezzo) : "",
       inizio: turno.inizio ?? "",
       fine: turno.fine ?? "",
       note: turno.note ?? "",
@@ -49,8 +78,6 @@ function FormModifica({ turno, onSuccess }) {
   const fine = useWatch({ control, name: "fine" });
 
   const minutiForm = calcMin(inizio, fine);
-  const showMacchinari =
-    lavori.find((l) => l.id === Number(lavoro_id))?.required_mezzo ?? false;
   const isAssenza =
     cantieri.find((c) => c.id === Number(cantiere_id))?.isAssenza ?? false;
 
@@ -61,17 +88,24 @@ function FormModifica({ turno, onSuccess }) {
       setValue("fine", "");
       setValue("note", "");
     }
-    if (!showMacchinari) {
+  }, [isAssenza, setValue]);
+
+  // Pulisce i campi macchinario quando lo switch viene spento
+  useEffect(() => { // eslint-disable-line react-hooks/set-state-in-effect
+    if (!usaMacchinario) {
       setValue("macchinario_id", "");
+      setValue("ore_mezzo", "");
       setValue("lavoro_finito", null);
     }
-  }, [isAssenza, showMacchinari, setValue]);
+  }, [usaMacchinario, setValue]);
 
   async function onSubmit(values) {
     setSaving(true);
 
     const cantiereObj = cantieri.find((c) => c.id === Number(values.cantiere_id));
-    const macchinarioObj = macchinari.find((m) => m.id === Number(values.macchinario_id));
+    const macchinarioObj = usaMacchinario
+      ? macchinari.find((m) => m.id === Number(values.macchinario_id))
+      : null;
 
     const result = await updateTurno(turno.id, { values, cantiereObj, macchinarioObj });
 
@@ -101,10 +135,7 @@ function FormModifica({ turno, onSuccess }) {
       {/* Cantiere */}
       <div className={fieldCls}>
         <label className={labelCls}>Cantiere</label>
-        <select
-          {...register("cantiere_id", { required: true })}
-          className={inputCls}
-        >
+        <select {...register("cantiere_id", { required: true })} className={inputCls}>
           <option value="" disabled>Seleziona cantiere</option>
           {cantieri?.map((c) => (
             <option key={c.id} value={c.id}>{c.cantiere}</option>
@@ -116,26 +147,10 @@ function FormModifica({ turno, onSuccess }) {
       {cantiere_id && !isAssenza && (
         <div className={fieldCls}>
           <label className={labelCls}>Tipo Lavoro</label>
-          <select
-            {...register("lavoro_id", { required: true })}
-            className={inputCls}
-          >
+          <select {...register("lavoro_id", { required: true })} className={inputCls}>
             <option value="" disabled>Seleziona lavoro</option>
             {lavori?.map((l) => (
               <option key={l.id} value={l.id}>{l.lavoro}</option>
-            ))}
-          </select>
-        </div>
-      )}
-
-      {/* Macchinario */}
-      {lavoro_id && showMacchinari && (
-        <div className={fieldCls}>
-          <label className={labelCls}>Macchinario</label>
-          <select {...register("macchinario_id")} className={inputCls}>
-            <option value="">Seleziona macchinario</option>
-            {macchinari?.map((m) => (
-              <option key={m.id} value={m.id}>{m.mezzo} — {m.cod_mezzo}</option>
             ))}
           </select>
         </div>
@@ -169,53 +184,85 @@ function FormModifica({ turno, onSuccess }) {
         </div>
       )}
 
-      {/* Lavoro finito */}
-      {lavoro_id && showMacchinari && (
-        <Controller
-          name="lavoro_finito"
-          control={control}
-          render={({ field }) => (
-            <div
-              className="rounded-lg px-4 py-3 flex items-center gap-6 border"
-              style={{ background: "var(--bg-subtle)", borderColor: "var(--border)" }}
-            >
-              <span className={labelCls + " shrink-0"}>Lavoro finito</span>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={field.value === true}
-                  onChange={() => field.onChange(field.value === true ? null : true)}
-                  className="w-4 h-4 rounded accent-red-600"
-                />
-                <span className="text-sm" style={{ color: "var(--text)" }}>Sì</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={field.value === false}
-                  onChange={() => field.onChange(field.value === false ? null : false)}
-                  className="w-4 h-4 rounded accent-red-600"
-                />
-                <span className="text-sm" style={{ color: "var(--text)" }}>No</span>
-              </label>
-            </div>
-          )}
-        />
-      )}
-
       {/* Ore calcolate */}
       {minutiForm > 0 && (
         <div
           className="rounded-lg p-4 text-center border-2"
           style={{ borderColor: "var(--primary)", background: "var(--primary-faint)" }}
         >
-          <p className="text-xs font-medium mb-1" style={{ color: "var(--primary)" }}>
-            Ore calcolate
-          </p>
-          <p className="text-2xl font-black" style={{ color: "var(--primary)" }}>
-            {fmtOre(minutiForm)}
-          </p>
+          <p className="text-xs font-medium mb-1" style={{ color: "var(--primary)" }}>Ore calcolate</p>
+          <p className="text-2xl font-black" style={{ color: "var(--primary)" }}>{fmtOre(minutiForm)}</p>
         </div>
+      )}
+
+      {/* Switch macchinario */}
+      {lavoro_id && (
+        <div
+          className="rounded-lg px-4 py-3 flex items-center justify-between border"
+          style={{ background: "var(--bg-subtle)", borderColor: "var(--border)" }}
+        >
+          <span className="text-sm font-medium" style={{ color: "var(--text)" }}>
+            Hai usato un macchinario?
+          </span>
+          <Switch checked={usaMacchinario} onChange={setUsaMacchinario} />
+        </div>
+      )}
+
+      {/* Macchinario + ore mezzo (visibili solo se switch ON) */}
+      {lavoro_id && usaMacchinario && (
+        <>
+          <div className={fieldCls}>
+            <label className={labelCls}>Macchinario</label>
+            <select {...register("macchinario_id")} className={inputCls}>
+              <option value="">Seleziona macchinario</option>
+              {macchinari?.map((m) => (
+                <option key={m.id} value={m.id}>{m.mezzo} — {m.cod_mezzo}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className={fieldCls}>
+            <label className={labelCls}>Ore macchinario</label>
+            <select {...register("ore_mezzo")} className={inputCls}>
+              <option value="">Seleziona ore</option>
+              {ORE_MEZZO_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Lavoro finito */}
+          <Controller
+            name="lavoro_finito"
+            control={control}
+            render={({ field }) => (
+              <div
+                className="rounded-lg px-4 py-3 flex items-center gap-6 border"
+                style={{ background: "var(--bg-subtle)", borderColor: "var(--border)" }}
+              >
+                <span className={labelCls + " shrink-0"}>Lavoro finito</span>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={field.value === true}
+                    onChange={() => field.onChange(field.value === true ? null : true)}
+                    className="w-4 h-4 rounded accent-red-600"
+                  />
+                  <span className="text-sm" style={{ color: "var(--text)" }}>Sì</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={field.value === false}
+                    onChange={() => field.onChange(field.value === false ? null : false)}
+                    className="w-4 h-4 rounded accent-red-600"
+                  />
+                  <span className="text-sm" style={{ color: "var(--text)" }}>No</span>
+                </label>
+              </div>
+            )}
+          />
+        </>
       )}
 
       {/* Note */}
