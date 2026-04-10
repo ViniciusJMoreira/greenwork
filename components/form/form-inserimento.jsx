@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import { useForm, Controller, useWatch } from "react-hook-form";
 import { calcMin, fmtOre } from "@/lib/utils";
 import { useApp } from "@/components/app-context";
@@ -23,20 +24,41 @@ const ORE_MEZZO_OPTIONS = Array.from({ length: 24 }, (_, i) => {
   return { value: val, label };
 });
 
+// Wrapper animato per sezioni condizionali del form
+function FadeField({ show, children }) {
+  return (
+    <AnimatePresence initial={false}>
+      {show && (
+        <motion.div
+          initial={{ opacity: 0, height: 0, y: -8 }}
+          animate={{ opacity: 1, height: "auto", y: 0 }}
+          exit={{ opacity: 0, height: 0, y: -8 }}
+          transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
+          style={{ overflow: "hidden" }}
+        >
+          {children}
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
 // Toggle switch riutilizzabile
 function Switch({ checked, onChange }) {
   return (
-    <button
+    <motion.button
       type="button"
       onClick={() => onChange(!checked)}
+      whileTap={{ scale: 0.9 }}
       className="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-200"
       style={{ background: checked ? "var(--primary)" : "var(--border-strong)" }}
     >
-      <span
-        className="inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform duration-200"
-        style={{ transform: checked ? "translateX(22px)" : "translateX(2px)" }}
+      <motion.span
+        animate={{ x: checked ? 22 : 2 }}
+        transition={{ type: "spring", stiffness: 500, damping: 26 }}
+        className="inline-block h-4 w-4 rounded-full bg-white shadow"
       />
-    </button>
+    </motion.button>
   );
 }
 
@@ -152,8 +174,8 @@ function FormBody({ onSuccess }) {
         </select>
       </div>
 
-      {/* Tipo lavoro */}
-      {cantiere_id && !isAssenza && (
+      {/* Tipo lavoro — slide-in animato */}
+      <FadeField show={!!(cantiere_id && !isAssenza)}>
         <div className={fieldCls}>
           <label className={labelCls}>Tipo Lavoro</label>
           <select {...register("lavoro_id", { required: true })} className={inputCls}>
@@ -163,10 +185,10 @@ function FormBody({ onSuccess }) {
             ))}
           </select>
         </div>
-      )}
+      </FadeField>
 
-      {/* Orario */}
-      {lavoro_id && (
+      {/* Orario — slide-in animato */}
+      <FadeField show={!!lavoro_id}>
         <div className="grid grid-cols-2 gap-3">
           <div className={fieldCls}>
             <label className={labelCls}>Inizio</label>
@@ -191,21 +213,37 @@ function FormBody({ onSuccess }) {
             />
           </div>
         </div>
-      )}
+      </FadeField>
 
-      {/* Ore calcolate */}
-      {minutiForm > 0 && (
-        <div
-          className="rounded-lg p-4 text-center border-2"
-          style={{ borderColor: "var(--primary)", background: "var(--primary-faint)" }}
-        >
-          <p className="text-xs font-medium mb-1" style={{ color: "var(--primary)" }}>Ore calcolate</p>
-          <p className="text-2xl font-black" style={{ color: "var(--primary)" }}>{fmtOre(minutiForm)}</p>
-        </div>
-      )}
+      {/* Ore calcolate — pop-in 3D */}
+      <AnimatePresence>
+        {minutiForm > 0 && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.85, y: 8, rotateX: 12 }}
+            animate={{ opacity: 1, scale: 1, y: 0, rotateX: 0 }}
+            exit={{ opacity: 0, scale: 0.85, y: 8 }}
+            transition={{ type: "spring", damping: 20, stiffness: 320 }}
+            style={{ transformPerspective: 700 }}
+            className="rounded-lg p-4 text-center border-2"
+            style={{ borderColor: "var(--primary)", background: "var(--primary-faint)", transformPerspective: 700 }}
+          >
+            <p className="text-xs font-medium mb-1" style={{ color: "var(--primary)" }}>Ore calcolate</p>
+            <motion.p
+              key={minutiForm}
+              initial={{ scale: 1.3, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: "spring", stiffness: 400, damping: 18 }}
+              className="text-2xl font-black"
+              style={{ color: "var(--primary)" }}
+            >
+              {fmtOre(minutiForm)}
+            </motion.p>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Switch macchinario */}
-      {lavoro_id && (
+      <FadeField show={!!lavoro_id}>
         <div
           className="rounded-lg px-4 py-3 flex items-center justify-between border"
           style={{ background: "var(--bg-subtle)", borderColor: "var(--border)" }}
@@ -215,14 +253,14 @@ function FormBody({ onSuccess }) {
           </span>
           <Switch checked={usaMacchinario} onChange={setUsaMacchinario} />
         </div>
-      )}
+      </FadeField>
 
-      {/* Macchinario + ore mezzo (visibili solo se switch ON) */}
-      {lavoro_id && usaMacchinario && (
-        <>
+      {/* Macchinario + ore mezzo */}
+      <FadeField show={!!(lavoro_id && usaMacchinario)}>
+        <div className="flex flex-col gap-4">
           <div className={fieldCls}>
             <label className={labelCls}>Macchinario</label>
-            <select {...register("macchinario_id")} className={inputCls}>
+            <select {...register("macchinario_id", { required: true })} className={inputCls}>
               <option value="">Seleziona macchinario</option>
               {macchinari?.map((m) => (
                 <option key={m.id} value={m.id}>{m.mezzo} — {m.cod_mezzo}</option>
@@ -232,7 +270,7 @@ function FormBody({ onSuccess }) {
 
           <div className={fieldCls}>
             <label className={labelCls}>Ore macchinario</label>
-            <select {...register("ore_mezzo")} className={inputCls}>
+            <select {...register("ore_mezzo", { required: true })} className={inputCls}>
               <option value="">Seleziona ore</option>
               {ORE_MEZZO_OPTIONS.map((o) => (
                 <option key={o.value} value={o.value}>{o.label}</option>
@@ -271,11 +309,11 @@ function FormBody({ onSuccess }) {
               </div>
             )}
           />
-        </>
-      )}
+        </div>
+      </FadeField>
 
       {/* Note */}
-      {lavoro_id && (
+      <FadeField show={!!lavoro_id}>
         <div className={fieldCls}>
           <label className={labelCls}>Note (opzionale)</label>
           <textarea
@@ -285,17 +323,26 @@ function FormBody({ onSuccess }) {
             className={inputCls + " resize-none"}
           />
         </div>
-      )}
+      </FadeField>
 
       {/* Submit */}
-      <button
+      <motion.button
         type="submit"
+        whileTap={{ scale: 0.97, rotateX: 4 }}
+        style={{ transformPerspective: 600 }}
         disabled={saving || (isAssenza ? !cantiere_id : !isValid || minutiForm <= 0)}
-        className="w-full py-3 rounded-lg font-semibold text-white text-sm transition-all active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed mt-1"
-        style={{ background: saving ? "var(--primary-hover)" : "var(--primary)" }}
+        className="w-full py-3 rounded-lg font-semibold text-white text-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed mt-1"
+        style={{
+          background: saving ? "var(--primary-hover)" : "var(--primary)",
+          transformPerspective: 600,
+        }}
       >
-        {saving ? <span className="flex items-center justify-center gap-2"><Spinner /> Salvataggio...</span> : "Salva Ore"}
-      </button>
+        {saving ? (
+          <span className="flex items-center justify-center gap-2"><Spinner /> Salvataggio...</span>
+        ) : (
+          "Salva Ore"
+        )}
+      </motion.button>
     </form>
   );
 }

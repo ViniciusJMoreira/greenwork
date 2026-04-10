@@ -12,7 +12,6 @@ export default function InserisciPage() {
           href="/storico"
           className="w-8 h-8 rounded-lg border flex items-center justify-center transition-colors"
           style={{ borderColor: "var(--border)", color: "var(--text-muted)" }}
-          onMouseEnter={undefined}
         >
           <ArrowLeft className="h-4 w-4" />
         </Link>
