@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useTheme } from "next-themes";
+import { useTheme } from "@/components/theme-provider";
 import { useRouter } from "next/navigation";
 import { loginByPin } from "@/lib/actions";
 import { Delete } from "lucide-react";
