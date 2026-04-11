@@ -3,15 +3,22 @@ import { createContext, useContext, useState } from "react";
 
 const AppContext = createContext(null);
 
-export function AppProvider({ children, operaio, cantieri, lavori, macchinari, turni: turniIniziali }) {
-  // Stato UI
-  const [showEmail, setShowEmail] = useState(false);
-  const [tab, setTab] = useState("inserisci");
-
-  // Turni mutabili lato client (aggiunta/rimozione senza reload)
+export function AppProvider({
+  children,
+  operaio,
+  cantieri,
+  lavori,
+  macchinari,
+  turni: turniIniziali,
+  tuttiTurni: tuttiTurniIniziali = [],
+  dipendenti: dipendentiIniziali = [],
+}) {
+  // Turni del dipendente loggato (mutabili lato client)
   const [turni, setTurni] = useState(turniIniziali ?? []);
-
-  const handleShowEmail = () => setShowEmail((v) => !v);
+  // Tutti i turni di tutti (solo responsabile — immutabili, si ricaricano)
+  const [tuttiTurni] = useState(tuttiTurniIniziali);
+  // Lista dipendenti (solo responsabile)
+  const [dipendenti] = useState(dipendentiIniziali);
 
   // Aggiunge un turno dopo insert riuscito
   function aggiungiTurno(turno) {
@@ -31,19 +38,20 @@ export function AppProvider({ children, operaio, cantieri, lavori, macchinari, t
   }
 
   return (
-    <AppContext.Provider value={{
-      // UI
-      showEmail, handleShowEmail,
-      tab, setTab,
-      // Dati sessione
-      operaio,
-      // Dati statici
-      cantieri,
-      lavori,
-      macchinari,
-      // Turni
-      turni, aggiungiTurno, rimuoviTurno, aggiornaTurno,
-    }}>
+    <AppContext.Provider
+      value={{
+        operaio,
+        cantieri,
+        lavori,
+        macchinari,
+        turni,
+        aggiungiTurno,
+        rimuoviTurno,
+        aggiornaTurno,
+        tuttiTurni,
+        dipendenti,
+      }}
+    >
       {children}
     </AppContext.Provider>
   );

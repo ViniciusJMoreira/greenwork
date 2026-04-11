@@ -1,8 +1,15 @@
 import { redirect } from "next/navigation";
 import { readSessionCookie } from "@/lib/auth";
-import { getCantieri, getLavori, getMacchinari, getTurniByDipendente } from "@/lib/actions";
+import {
+  getCantieri,
+  getLavori,
+  getMacchinari,
+  getTurniByDipendente,
+  getAllTurni,
+  getDipendenti,
+} from "@/lib/actions";
 import { AppProvider } from "@/components/app-context";
-import { TopBar } from "@/components/top-bar"
+import { TopBar } from "@/components/top-bar";
 import { BottomNav } from "@/components/bottom-nav";
 
 export default async function AppLayout({ children }) {
@@ -10,13 +17,18 @@ export default async function AppLayout({ children }) {
   const operaio = await readSessionCookie();
   if (!operaio) redirect("/login");
 
-  // Fetch parallelo di tutti i dati necessari
-  const [cantieri, lavori, macchinari, turni] = await Promise.all([
-    getCantieri(),
-    getLavori(),
-    getMacchinari(),
-    getTurniByDipendente(operaio.id),
-  ]);
+  const isResponsabile = operaio.ruolo === "responsabile";
+
+  // Fetch parallelo — dati base per tutti + dati extra solo per responsabile
+  const [cantieri, lavori, macchinari, turni, tuttiTurni, dipendenti] =
+    await Promise.all([
+      getCantieri(),
+      getLavori(),
+      getMacchinari(),
+      getTurniByDipendente(operaio.id),
+      isResponsabile ? getAllTurni() : Promise.resolve([]),
+      isResponsabile ? getDipendenti() : Promise.resolve([]),
+    ]);
 
   return (
     <AppProvider
@@ -25,6 +37,8 @@ export default async function AppLayout({ children }) {
       lavori={lavori}
       macchinari={macchinari}
       turni={turni}
+      tuttiTurni={tuttiTurni}
+      dipendenti={dipendenti}
     >
       <div className="min-h-screen bg-background">
         <TopBar />

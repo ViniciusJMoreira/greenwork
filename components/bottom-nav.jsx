@@ -1,16 +1,25 @@
-"use client"
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { LayoutDashboard, ClockArrowUp, History } from "lucide-react"
+"use client";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { LayoutDashboard, ClockArrowUp, History, Users } from "lucide-react";
+import { useApp } from "@/components/app-context";
 
-const navLinks = [
+const baseLinks = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/storico",   label: "Storico",   icon: History },
   { href: "/inserisci", label: "Inserisci", icon: ClockArrowUp },
-]
+];
+
+const responsabileLink = { href: "/personale", label: "Personale", icon: Users };
 
 export function BottomNav() {
-  const pathname = usePathname()
+  const pathname = usePathname();
+  const { operaio } = useApp();
+  const isResponsabile = operaio?.ruolo === "responsabile";
+
+  const navLinks = isResponsabile
+    ? [...baseLinks, responsabileLink]
+    : baseLinks;
 
   return (
     <nav
@@ -19,7 +28,7 @@ export function BottomNav() {
     >
       <div className="flex items-stretch h-16">
         {navLinks.map(({ href, label, icon: Icon }) => {
-          const active = pathname === href
+          const active = pathname === href;
           return (
             <Link
               key={href}
@@ -40,11 +49,11 @@ export function BottomNav() {
                 {label}
               </span>
             </Link>
-          )
+          );
         })}
       </div>
       {/* Safe area iOS */}
       <div style={{ height: "env(safe-area-inset-bottom)" }} />
     </nav>
-  )
+  );
 }
