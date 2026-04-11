@@ -51,7 +51,9 @@ function Switch({ checked, onChange }) {
       onClick={() => onChange(!checked)}
       whileTap={{ scale: 0.9 }}
       className="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-200"
-      style={{ background: checked ? "var(--primary)" : "var(--border-strong)" }}
+      style={{
+        background: checked ? "var(--primary)" : "var(--border-strong)",
+      }}
     >
       <motion.span
         animate={{ x: checked ? 22 : 2 }}
@@ -76,13 +78,7 @@ function FormBody({ onSuccess }) {
   const ultimoGiorno = new Date(oggi.getFullYear(), oggi.getMonth() + 1, 0);
   const meseMax = `${ultimoGiorno.getFullYear()}-${pad(ultimoGiorno.getMonth() + 1)}-${pad(ultimoGiorno.getDate())}`;
 
-  const {
-    register,
-    handleSubmit,
-    control,
-    setValue,
-    formState: { isValid },
-  } = useForm({
+  const { register, handleSubmit, control, setValue } = useForm({
     mode: "onChange",
     shouldUnregister: true,
     defaultValues: {
@@ -103,10 +99,18 @@ function FormBody({ onSuccess }) {
   const lavoro_id = useWatch({ control, name: "lavoro_id" });
   const inizio = useWatch({ control, name: "inizio" });
   const fine = useWatch({ control, name: "fine" });
+  const macchinario_id = useWatch({ control, name: "macchinario_id" });
+  const ore_mezzo = useWatch({ control, name: "ore_mezzo" });
 
   const minutiForm = calcMin(inizio, fine);
   const isAssenza =
     cantieri.find((c) => c.id === Number(cantiere_id))?.isAssenza ?? false;
+
+  // Verifica manuale campi obbligatori — più affidabile di isValid con mode:onChange
+  const campiBase =
+    !!cantiere_id && !!lavoro_id && !!inizio && !!fine && minutiForm > 0;
+  const campiMezzo = !usaMacchinario || (!!macchinario_id && !!ore_mezzo);
+  const canSubmit = isAssenza ? !!cantiere_id : campiBase && campiMezzo;
 
   // Pulisce i campi dipendenti quando cambiano le selezioni principali
   useEffect(() => {
@@ -119,7 +123,7 @@ function FormBody({ onSuccess }) {
   }, [isAssenza, setValue]);
 
   // Pulisce i campi macchinario quando lo switch viene spento
-  useEffect(() => { // eslint-disable-line react-hooks/set-state-in-effect
+  useEffect(() => {
     if (!usaMacchinario) {
       setValue("macchinario_id", "");
       setValue("ore_mezzo", "");
@@ -130,12 +134,19 @@ function FormBody({ onSuccess }) {
   async function onSubmit(values) {
     setSaving(true);
 
-    const cantiereObj = cantieri.find((c) => c.id === Number(values.cantiere_id));
+    const cantiereObj = cantieri.find(
+      (c) => c.id === Number(values.cantiere_id),
+    );
     const macchinarioObj = usaMacchinario
       ? macchinari.find((m) => m.id === Number(values.macchinario_id))
       : null;
 
-    const result = await insertTurno({ values, cantiereObj, macchinarioObj, operaio });
+    const result = await insertTurno({
+      values,
+      cantiereObj,
+      macchinarioObj,
+      operaio,
+    });
 
     if (!result.success) {
       toast.error(result.error ?? "Errore salvataggio");
@@ -150,7 +161,7 @@ function FormBody({ onSuccess }) {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+    <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4">
       {/* Data */}
       <div className={fieldCls}>
         <label className={labelCls}>Data</label>
@@ -158,7 +169,7 @@ function FormBody({ onSuccess }) {
           type="date"
           min={meseMin}
           max={meseMax}
-          {...register("data", { required: true })}
+          {...register("data")}
           className={inputCls + " appearance-none min-w-0"}
         />
       </div>
@@ -166,10 +177,17 @@ function FormBody({ onSuccess }) {
       {/* Cantiere */}
       <div className={fieldCls}>
         <label className={labelCls}>Cantiere</label>
-        <select {...register("cantiere_id", { required: true })} className={inputCls}>
-          <option value="" disabled>Seleziona cantiere</option>
+        <select
+          {...register("cantiere_id")}
+          className={inputCls}
+        >
+          <option value="" disabled>
+            Seleziona cantiere
+          </option>
           {cantieri?.map((c) => (
-            <option key={c.id} value={c.id}>{c.cantiere}</option>
+            <option key={c.id} value={c.id}>
+              {c.cantiere}
+            </option>
           ))}
         </select>
       </div>
@@ -178,10 +196,17 @@ function FormBody({ onSuccess }) {
       <FadeField show={!!(cantiere_id && !isAssenza)}>
         <div className={fieldCls}>
           <label className={labelCls}>Tipo Lavoro</label>
-          <select {...register("lavoro_id", { required: true })} className={inputCls}>
-            <option value="" disabled>Seleziona lavoro</option>
+          <select
+            {...register("lavoro_id")}
+            className={inputCls}
+          >
+            <option value="" disabled>
+              Seleziona lavoro
+            </option>
             {lavori?.map((l) => (
-              <option key={l.id} value={l.id}>{l.lavoro}</option>
+              <option key={l.id} value={l.id}>
+                {l.lavoro}
+              </option>
             ))}
           </select>
         </div>
@@ -195,9 +220,12 @@ function FormBody({ onSuccess }) {
             <Controller
               name="inizio"
               control={control}
-              rules={{ required: true }}
               render={({ field }) => (
-                <TimeSelect value={field.value} onChange={field.onChange} placeholder="Seleziona ora" />
+                <TimeSelect
+                  value={field.value}
+                  onChange={field.onChange}
+                  placeholder="Seleziona ora"
+                />
               )}
             />
           </div>
@@ -206,9 +234,13 @@ function FormBody({ onSuccess }) {
             <Controller
               name="fine"
               control={control}
-              rules={{ required: true }}
               render={({ field }) => (
-                <TimeSelect value={field.value} onChange={field.onChange} placeholder="Seleziona ora" minTime={inizio} />
+                <TimeSelect
+                  value={field.value}
+                  onChange={field.onChange}
+                  placeholder="Seleziona ora"
+                  minTime={inizio}
+                />
               )}
             />
           </div>
@@ -223,11 +255,19 @@ function FormBody({ onSuccess }) {
             animate={{ opacity: 1, scale: 1, y: 0, rotateX: 0 }}
             exit={{ opacity: 0, scale: 0.85, y: 8 }}
             transition={{ type: "spring", damping: 20, stiffness: 320 }}
-            style={{ transformPerspective: 700 }}
+            style={{
+              borderColor: "var(--primary)",
+              background: "var(--primary-faint)",
+              transformPerspective: 700,
+            }}
             className="rounded-lg p-4 text-center border-2"
-            style={{ borderColor: "var(--primary)", background: "var(--primary-faint)", transformPerspective: 700 }}
           >
-            <p className="text-xs font-medium mb-1" style={{ color: "var(--primary)" }}>Ore calcolate</p>
+            <p
+              className="text-xs font-medium mb-1"
+              style={{ color: "var(--primary)" }}
+            >
+              Ore calcolate
+            </p>
             <motion.p
               key={minutiForm}
               initial={{ scale: 1.3, opacity: 0 }}
@@ -246,9 +286,15 @@ function FormBody({ onSuccess }) {
       <FadeField show={!!lavoro_id}>
         <div
           className="rounded-lg px-4 py-3 flex items-center justify-between border"
-          style={{ background: "var(--bg-subtle)", borderColor: "var(--border)" }}
+          style={{
+            background: "var(--bg-subtle)",
+            borderColor: "var(--border)",
+          }}
         >
-          <span className="text-sm font-medium" style={{ color: "var(--text)" }}>
+          <span
+            className="text-sm font-medium"
+            style={{ color: "var(--text)" }}
+          >
             Hai usato un macchinario?
           </span>
           <Switch checked={usaMacchinario} onChange={setUsaMacchinario} />
@@ -260,20 +306,30 @@ function FormBody({ onSuccess }) {
         <div className="flex flex-col gap-4">
           <div className={fieldCls}>
             <label className={labelCls}>Macchinario</label>
-            <select {...register("macchinario_id", { required: true })} className={inputCls}>
+            <select
+              {...register("macchinario_id")}
+              className={inputCls}
+            >
               <option value="">Seleziona macchinario</option>
               {macchinari?.map((m) => (
-                <option key={m.id} value={m.id}>{m.mezzo} — {m.cod_mezzo}</option>
+                <option key={m.id} value={m.id}>
+                  {m.mezzo} — {m.cod_mezzo}
+                </option>
               ))}
             </select>
           </div>
 
           <div className={fieldCls}>
             <label className={labelCls}>Ore macchinario</label>
-            <select {...register("ore_mezzo", { required: true })} className={inputCls}>
+            <select
+              {...register("ore_mezzo")}
+              className={inputCls}
+            >
               <option value="">Seleziona ore</option>
               {ORE_MEZZO_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>{o.label}</option>
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
               ))}
             </select>
           </div>
@@ -285,26 +341,37 @@ function FormBody({ onSuccess }) {
             render={({ field }) => (
               <div
                 className="rounded-lg px-4 py-3 flex items-center gap-6 border"
-                style={{ background: "var(--bg-subtle)", borderColor: "var(--border)" }}
+                style={{
+                  background: "var(--bg-subtle)",
+                  borderColor: "var(--border)",
+                }}
               >
                 <span className={labelCls + " shrink-0"}>Lavoro finito</span>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={field.value === true}
-                    onChange={() => field.onChange(field.value === true ? null : true)}
+                    onChange={() =>
+                      field.onChange(field.value === true ? null : true)
+                    }
                     className="w-4 h-4 rounded accent-red-600"
                   />
-                  <span className="text-sm" style={{ color: "var(--text)" }}>Sì</span>
+                  <span className="text-sm" style={{ color: "var(--text)" }}>
+                    Sì
+                  </span>
                 </label>
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={field.value === false}
-                    onChange={() => field.onChange(field.value === false ? null : false)}
+                    onChange={() =>
+                      field.onChange(field.value === false ? null : false)
+                    }
                     className="w-4 h-4 rounded accent-red-600"
                   />
-                  <span className="text-sm" style={{ color: "var(--text)" }}>No</span>
+                  <span className="text-sm" style={{ color: "var(--text)" }}>
+                    No
+                  </span>
                 </label>
               </div>
             )}
@@ -329,16 +396,17 @@ function FormBody({ onSuccess }) {
       <motion.button
         type="submit"
         whileTap={{ scale: 0.97, rotateX: 4 }}
-        style={{ transformPerspective: 600 }}
-        disabled={saving || (isAssenza ? !cantiere_id : !isValid || minutiForm <= 0)}
-        className="w-full py-3 rounded-lg font-semibold text-white text-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed mt-1"
         style={{
           background: saving ? "var(--primary-hover)" : "var(--primary)",
           transformPerspective: 600,
         }}
+        disabled={saving || !canSubmit}
+        className="w-full py-3 rounded-lg font-semibold text-white text-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed mt-1"
       >
         {saving ? (
-          <span className="flex items-center justify-center gap-2"><Spinner /> Salvataggio...</span>
+          <span className="flex items-center justify-center gap-2">
+            <Spinner /> Salvataggio...
+          </span>
         ) : (
           "Salva Ore"
         )}

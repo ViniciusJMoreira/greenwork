@@ -76,7 +76,6 @@ function FormModifica({ turno, onSuccess }) {
     handleSubmit,
     control,
     setValue,
-    formState: { isValid },
   } = useForm({
     mode: "onChange",
     shouldUnregister: true,
@@ -98,10 +97,17 @@ function FormModifica({ turno, onSuccess }) {
   const lavoro_id = useWatch({ control, name: "lavoro_id" });
   const inizio = useWatch({ control, name: "inizio" });
   const fine = useWatch({ control, name: "fine" });
+  const macchinario_id = useWatch({ control, name: "macchinario_id" });
+  const ore_mezzo = useWatch({ control, name: "ore_mezzo" });
 
   const minutiForm = calcMin(inizio, fine);
   const isAssenza =
     cantieri.find((c) => c.id === Number(cantiere_id))?.isAssenza ?? false;
+
+  // Verifica manuale campi obbligatori — più affidabile di isValid con mode:onChange
+  const campiBase = !!cantiere_id && !!lavoro_id && !!inizio && !!fine && minutiForm > 0;
+  const campiMezzo = !usaMacchinario || (!!macchinario_id && !!ore_mezzo);
+  const canSubmit = isAssenza ? !!cantiere_id : campiBase && campiMezzo;
 
   useEffect(() => {
     if (isAssenza) {
@@ -143,13 +149,13 @@ function FormModifica({ turno, onSuccess }) {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
+    <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4">
       {/* Data */}
       <div className={fieldCls}>
         <label className={labelCls}>Data</label>
         <input
           type="date"
-          {...register("data", { required: true })}
+          {...register("data")}
           className={inputCls + " appearance-none min-w-0"}
         />
       </div>
@@ -157,7 +163,7 @@ function FormModifica({ turno, onSuccess }) {
       {/* Cantiere */}
       <div className={fieldCls}>
         <label className={labelCls}>Cantiere</label>
-        <select {...register("cantiere_id", { required: true })} className={inputCls}>
+        <select {...register("cantiere_id")} className={inputCls}>
           <option value="" disabled>Seleziona cantiere</option>
           {cantieri?.map((c) => (
             <option key={c.id} value={c.id}>{c.cantiere}</option>
@@ -169,7 +175,7 @@ function FormModifica({ turno, onSuccess }) {
       <FadeField show={!!(cantiere_id && !isAssenza)}>
         <div className={fieldCls}>
           <label className={labelCls}>Tipo Lavoro</label>
-          <select {...register("lavoro_id", { required: true })} className={inputCls}>
+          <select {...register("lavoro_id")} className={inputCls}>
             <option value="" disabled>Seleziona lavoro</option>
             {lavori?.map((l) => (
               <option key={l.id} value={l.id}>{l.lavoro}</option>
@@ -186,7 +192,6 @@ function FormModifica({ turno, onSuccess }) {
             <Controller
               name="inizio"
               control={control}
-              rules={{ required: true }}
               render={({ field }) => (
                 <TimeSelect value={field.value} onChange={field.onChange} placeholder="Seleziona ora" />
               )}
@@ -197,7 +202,6 @@ function FormModifica({ turno, onSuccess }) {
             <Controller
               name="fine"
               control={control}
-              rules={{ required: true }}
               render={({ field }) => (
                 <TimeSelect value={field.value} onChange={field.onChange} placeholder="Seleziona ora" minTime={inizio} />
               )}
@@ -251,7 +255,7 @@ function FormModifica({ turno, onSuccess }) {
         <div className="flex flex-col gap-4">
           <div className={fieldCls}>
             <label className={labelCls}>Macchinario</label>
-            <select {...register("macchinario_id", { required: true })} className={inputCls}>
+            <select {...register("macchinario_id")} className={inputCls}>
               <option value="">Seleziona macchinario</option>
               {macchinari?.map((m) => (
                 <option key={m.id} value={m.id}>{m.mezzo} — {m.cod_mezzo}</option>
@@ -261,7 +265,7 @@ function FormModifica({ turno, onSuccess }) {
 
           <div className={fieldCls}>
             <label className={labelCls}>Ore macchinario</label>
-            <select {...register("ore_mezzo", { required: true })} className={inputCls}>
+            <select {...register("ore_mezzo")} className={inputCls}>
               <option value="">Seleziona ore</option>
               {ORE_MEZZO_OPTIONS.map((o) => (
                 <option key={o.value} value={o.value}>{o.label}</option>
@@ -320,7 +324,7 @@ function FormModifica({ turno, onSuccess }) {
       <motion.button
         type="submit"
         whileTap={{ scale: 0.97, rotateX: 4 }}
-        disabled={saving || (isAssenza ? !cantiere_id : !isValid || minutiForm <= 0)}
+        disabled={saving || !canSubmit}
         className="w-full py-3 rounded-lg font-semibold text-white text-sm transition-all disabled:opacity-40 disabled:cursor-not-allowed mt-1"
         style={{
           background: saving ? "var(--primary-hover)" : "var(--primary)",
