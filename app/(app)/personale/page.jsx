@@ -194,6 +194,30 @@ function OperaioCard({ dipendente, turni, index = 0 }) {
   const min = turni.reduce((a, t) => a + calcMin(t.inizio, t.fine), 0);
   const giorni = new Set(turni.map((t) => t.data)).size;
 
+  // Raggruppa per data, turni ordinati per orario (mattina → sera)
+  const gruppiDate = turni
+    .reduce((acc, t) => {
+      if (!t.data) return acc;
+      const existing = acc.find((g) => g.data === t.data);
+      if (existing) {
+        existing.records.push(t);
+        existing.totMin += calcMin(t.inizio, t.fine);
+      } else {
+        acc.push({
+          data: t.data,
+          records: [t],
+          totMin: calcMin(t.inizio, t.fine),
+        });
+      }
+      return acc;
+    }, [])
+    .map((g) => ({
+      ...g,
+      records: g.records.sort((a, b) =>
+        (a.inizio || "").localeCompare(b.inizio || ""),
+      ),
+    }));
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -253,7 +277,7 @@ function OperaioCard({ dipendente, turni, index = 0 }) {
         </div>
       </motion.button>
 
-      {/* Turni espansi */}
+      {/* Turni espansi — raggruppati per data come lo storico */}
       <AnimatePresence initial={false}>
         {expanded && (
           <motion.div
@@ -264,11 +288,37 @@ function OperaioCard({ dipendente, turni, index = 0 }) {
             style={{ overflow: "hidden" }}
           >
             <div
-              className="border-t px-4 pb-4 pt-3 flex flex-col gap-2"
+              className="border-t px-4 pb-4 pt-3 flex flex-col gap-4"
               style={{ borderColor: "var(--border)" }}
             >
-              {turni.map((t, i) => (
-                <TurnoCard key={t.id} record={t} index={i} />
+              {gruppiDate.map(({ data, records, totMin: dayMin }) => (
+                <div key={data}>
+                  {/* Header data */}
+                  <div className="flex items-center gap-3 mb-2 px-1">
+                    <span
+                      className="text-xs font-semibold capitalize"
+                      style={{ color: "var(--text-muted)" }}
+                    >
+                      {formatHeader(data)}
+                    </span>
+                    <div
+                      className="flex-1 h-px"
+                      style={{ background: "var(--border)" }}
+                    />
+                    <span
+                      className="text-[11px] font-bold px-2 py-0.5 rounded-full"
+                      style={{ background: "var(--primary)", color: "white" }}
+                    >
+                      {fmtOre(dayMin)}
+                    </span>
+                  </div>
+                  {/* Turni del giorno */}
+                  <div className="flex flex-col gap-2">
+                    {records.map((t, i) => (
+                      <TurnoCard key={t.id} record={t} index={i} />
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
           </motion.div>
@@ -410,7 +460,15 @@ export default function PersonalePage() {
       map[t.data].records.push(t);
       map[t.data].totMin += calcMin(t.inizio, t.fine);
     });
-    return Object.values(map).sort((a, b) => (a.data > b.data ? -1 : 1));
+    // Turni di ogni giorno ordinati per orario (mattina → sera)
+    return Object.values(map)
+      .map((g) => ({
+        ...g,
+        records: g.records.sort((a, b) =>
+          (a.inizio || "").localeCompare(b.inizio || ""),
+        ),
+      }))
+      .sort((a, b) => (a.data > b.data ? -1 : 1));
   }, [filtered]);
 
   const hasFilters =
@@ -457,8 +515,8 @@ export default function PersonalePage() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         <StatCard
           icon={Clock}
-          value={`${(stats.minutiTotali / 60).toFixed(1)}h`}
-          label="Ore team (mese)"
+          value={`${(stats.minutiTotali / 60).toFixed(1)}`}
+          label="Ore campi sportivi (mese)"
           index={0}
         />
         <StatCard
