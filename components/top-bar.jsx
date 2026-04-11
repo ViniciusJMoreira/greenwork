@@ -3,12 +3,12 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { useTheme } from "@/components/theme-provider";
-import { Sun, Moon, LogOut, ChevronDown } from "lucide-react";
+import { Sun, Moon, LogOut, ChevronDown, Users } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useApp } from "@/components/app-context";
 import Image from "next/image";
 
-const navLinks = [
+const baseNavLinks = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/storico", label: "Storico" },
   { href: "/inserisci", label: "Inserisci Ore" },
@@ -23,6 +23,10 @@ export function TopBar() {
   const logoSrc =
     mounted && resolvedTheme === "dark" ? "/logo-dark.png" : "/logo.png";
   const { operaio } = useApp();
+  const isResponsabile = operaio?.ruolo === "responsabile";
+  const navLinks = isResponsabile
+    ? [...baseNavLinks, { href: "/personale", label: "Personale" }]
+    : baseNavLinks;
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
 
