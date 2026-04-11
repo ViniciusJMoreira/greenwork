@@ -498,7 +498,15 @@ export default function StoricoPage() {
       map[t.data].records.push(t);
       map[t.data].totMin += calcMin(t.inizio, t.fine);
     });
-    return Object.values(map).sort((a, b) => (a.data > b.data ? -1 : 1));
+    // Turni di ogni giorno ordinati per orario (mattina → sera)
+    return Object.values(map)
+      .map((g) => ({
+        ...g,
+        records: g.records.sort((a, b) =>
+          (a.inizio || "").localeCompare(b.inizio || ""),
+        ),
+      }))
+      .sort((a, b) => (a.data > b.data ? -1 : 1));
   }, [filtered]);
 
   return (
