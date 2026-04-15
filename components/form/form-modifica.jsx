@@ -70,6 +70,8 @@ function FormModifica({ turno, onSuccess }) {
   const [saving, setSaving] = useState(false);
   // Pre-fillato: switch ON se il turno aveva già un macchinario
   const [usaMacchinario, setUsaMacchinario] = useState(!!(turno.mezzo_id));
+  // Pre-fillato: switch ON se il turno aveva già uno spostamento km
+  const [usaKm, setUsaKm] = useState(!!(turno.km_totale));
 
   const {
     register,
@@ -89,6 +91,8 @@ function FormModifica({ turno, onSuccess }) {
       fine: turno.fine ?? "",
       note: turno.note ?? "",
       lavoro_finito: turno.lavoro_finito ?? null,
+      km_percorso: turno.km_percorso ?? "",
+      km_totale: turno.km_totale ? String(turno.km_totale) : "",
     },
   });
 
@@ -99,6 +103,8 @@ function FormModifica({ turno, onSuccess }) {
   const fine = useWatch({ control, name: "fine" });
   const macchinario_id = useWatch({ control, name: "macchinario_id" });
   const ore_mezzo = useWatch({ control, name: "ore_mezzo" });
+  const km_percorso = useWatch({ control, name: "km_percorso" });
+  const km_totale = useWatch({ control, name: "km_totale" });
 
   const minutiForm = calcMin(inizio, fine);
   const isAssenza =
@@ -107,7 +113,9 @@ function FormModifica({ turno, onSuccess }) {
   // Verifica manuale campi obbligatori — più affidabile di isValid con mode:onChange
   const campiBase = !!cantiere_id && !!lavoro_id && !!inizio && !!fine && minutiForm > 0;
   const campiMezzo = !usaMacchinario || (!!macchinario_id && !!ore_mezzo);
-  const canSubmit = isAssenza ? !!cantiere_id : campiBase && campiMezzo;
+  const campiKm =
+    !usaKm || (!!km_percorso.trim() && !!km_totale && parseFloat(km_totale) > 0);
+  const canSubmit = isAssenza ? !!cantiere_id : campiBase && campiMezzo && campiKm;
 
   useEffect(() => {
     if (isAssenza) {
@@ -126,6 +134,14 @@ function FormModifica({ turno, onSuccess }) {
       setValue("lavoro_finito", null);
     }
   }, [usaMacchinario, setValue]);
+
+  // Pulisce i campi km quando lo switch spostamento viene spento
+  useEffect(() => { // eslint-disable-line react-hooks/set-state-in-effect
+    if (!usaKm) {
+      setValue("km_percorso", "");
+      setValue("km_totale", "");
+    }
+  }, [usaKm, setValue]);
 
   async function onSubmit(values) {
     setSaving(true);
@@ -244,7 +260,7 @@ function FormModifica({ turno, onSuccess }) {
           style={{ background: "var(--bg-subtle)", borderColor: "var(--border)" }}
         >
           <span className="text-sm font-medium" style={{ color: "var(--text)" }}>
-            Hai usato un macchinario?
+            Hai usato un macchinario/mezzo?
           </span>
           <Switch checked={usaMacchinario} onChange={setUsaMacchinario} />
         </div>
@@ -304,6 +320,51 @@ function FormModifica({ turno, onSuccess }) {
               </div>
             )}
           />
+        </div>
+      </FadeField>
+
+      {/* Switch spostamento km */}
+      <FadeField show={!!lavoro_id}>
+        <div
+          className="rounded-lg px-4 py-3 flex items-center justify-between border"
+          style={{ background: "var(--bg-subtle)", borderColor: "var(--border)" }}
+        >
+          <span className="text-sm font-medium" style={{ color: "var(--text)" }}>
+            Rimborso chilometrico?
+          </span>
+          <Switch checked={usaKm} onChange={setUsaKm} />
+        </div>
+      </FadeField>
+
+      {/* Spostamento: percorso + km */}
+      <FadeField show={!!(lavoro_id && usaKm)}>
+        <div className="flex flex-col gap-4">
+          <div className={fieldCls}>
+            <label className={labelCls}>Percorso effettuato</label>
+            <textarea
+              {...register("km_percorso")}
+              rows={2}
+              placeholder="es. da Viserbella a Spadarolo"
+              className={inputCls + " resize-none"}
+            />
+          </div>
+          <div className={fieldCls}>
+            <label className={labelCls}>Chilometri percorsi</label>
+            <Controller
+              name="km_totale"
+              control={control}
+              render={({ field }) => (
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="es. 12.5"
+                  value={field.value}
+                  onChange={(e) => field.onChange(e.target.value.replace(",", "."))}
+                  className={inputCls}
+                />
+              )}
+            />
+          </div>
         </div>
       </FadeField>
 
