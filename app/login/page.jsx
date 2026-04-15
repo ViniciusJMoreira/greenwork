@@ -75,7 +75,7 @@ export default function LoginPage() {
       const result = await loginByPin(next);
       setLoading(false);
       if (result.success) {
-        router.push("/dashboard");
+        router.push("/principale");
       } else {
         // Shake 3D con motion invece di CSS animation
         animateCard(

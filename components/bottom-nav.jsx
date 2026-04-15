@@ -1,16 +1,16 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, ClockArrowUp, History, Users } from "lucide-react";
+import { LayoutDashboard, ClockArrowUp, History, Home } from "lucide-react";
 import { useApp } from "@/components/app-context";
 
 const baseLinks = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/storico",   label: "Storico",   icon: History },
-  { href: "/inserisci", label: "Inserisci", icon: ClockArrowUp },
+  { href: "/principale", label: "Principale", icon: Home },
+  { href: "/storico",   label: "Storico",    icon: History },
+  { href: "/inserisci", label: "Inserisci",  icon: ClockArrowUp },
 ];
 
-const responsabileLink = { href: "/personale", label: "Personale", icon: Users };
+const responsabileLink = { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard };
 
 export function BottomNav() {
   const pathname = usePathname();
