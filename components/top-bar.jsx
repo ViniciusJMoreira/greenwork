@@ -3,15 +3,15 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { useTheme } from "@/components/theme-provider";
-import { Sun, Moon, LogOut, ChevronDown, Users } from "lucide-react";
+import { Sun, Moon, LogOut, ChevronDown, Home, History, ClockArrowUp, LayoutDashboard } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useApp } from "@/components/app-context";
 import Image from "next/image";
 
 const baseNavLinks = [
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/storico", label: "Storico" },
-  { href: "/inserisci", label: "Inserisci Ore" },
+  { href: "/principale", label: "Principale", icon: Home },
+  { href: "/storico",    label: "Storico",    icon: History },
+  { href: "/inserisci",  label: "Inserisci",  icon: ClockArrowUp },
 ];
 
 export function TopBar() {
@@ -25,7 +25,7 @@ export function TopBar() {
   const { operaio } = useApp();
   const isResponsabile = operaio?.ruolo === "responsabile";
   const navLinks = isResponsabile
-    ? [...baseNavLinks, { href: "/personale", label: "Personale" }]
+    ? [...baseNavLinks, { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard }]
     : baseNavLinks;
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
@@ -55,7 +55,7 @@ export function TopBar() {
         <div className="flex h-14 items-center justify-between gap-4">
           {/* Logo */}
           <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
-            <Link href="/dashboard" className="flex items-center gap-2.5 shrink-0">
+            <Link href="/principale" className="flex items-center gap-2.5 shrink-0">
               <div className="grid place-items-center">
                 <Image src={logoSrc} alt="COOP134" width={60} height={60} className="object-contain" priority />
               </div>
@@ -68,27 +68,39 @@ export function TopBar() {
             </Link>
           </motion.div>
 
-          {/* Nav desktop — stagger entrance */}
-          <nav className="hidden md:flex gap-0.5">
+          {/* Nav desktop — pill con indicatore scorrevole */}
+          <nav
+            className="hidden md:flex items-center gap-1 rounded-xl p-1"
+            style={{ background: "var(--bg-subtle)" }}
+          >
             {navLinks.map((link, i) => {
               const active = pathname === link.href;
+              const Icon = link.icon;
               return (
                 <motion.div
                   key={link.href}
-                  initial={{ opacity: 0, y: -8 }}
+                  initial={{ opacity: 0, y: -6 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.05 + i * 0.06, duration: 0.22 }}
-                  whileTap={{ scale: 0.95 }}
+                  transition={{ delay: 0.04 + i * 0.05, duration: 0.2 }}
+                  className="relative"
                 >
+                  {/* Pill attivo scorrevole */}
+                  {active && (
+                    <motion.div
+                      layoutId="nav-pill"
+                      className="absolute inset-0 rounded-lg"
+                      style={{ background: "var(--bg-card)" }}
+                      transition={{ type: "spring", stiffness: 420, damping: 32 }}
+                    />
+                  )}
                   <Link
                     href={link.href}
-                    className="px-3 py-1.5 rounded-md text-sm font-medium transition-colors block"
-                    style={{
-                      background: active ? "var(--bg-subtle)" : "transparent",
-                      color: active ? "var(--primary)" : "var(--text-muted)",
-                      borderBottom: active ? "2px solid var(--primary)" : "2px solid transparent",
-                    }}
+                    className="relative flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-medium transition-colors z-10"
+                    style={{ color: active ? "var(--primary)" : "var(--text-muted)" }}
+                    onMouseEnter={(e) => { if (!active) e.currentTarget.style.color = "var(--text)"; }}
+                    onMouseLeave={(e) => { if (!active) e.currentTarget.style.color = "var(--text-muted)"; }}
                   >
+                    <Icon className="h-3.5 w-3.5 shrink-0" strokeWidth={active ? 2.2 : 1.8} />
                     {link.label}
                   </Link>
                 </motion.div>
