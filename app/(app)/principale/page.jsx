@@ -78,10 +78,13 @@ export default function DashboardPage() {
   );
 
   const stats = useMemo(() => getStats(turniMese), [turniMese]);
-  const oreTot = (stats.minutiTotali / 60).toFixed(1);
-  const media = stats.giorniLavorati
-    ? (stats.minutiTotali / 60 / stats.giorniLavorati).toFixed(1)
-    : "0";
+
+  // Valori KPI — se 0 mostra "-"
+  const oreTot    = stats.minutiTotali > 0 ? (stats.minutiTotali / 60).toFixed(1) + "h" : "—";
+  const giorni    = stats.giorniLavorati > 0 ? stats.giorniLavorati : "—";
+  const media     = stats.giorniLavorati > 0 ? (stats.minutiTotali / 60 / stats.giorniLavorati).toFixed(1) + "h" : "—";
+  const kmTot     = useMemo(() => turniMese.reduce((acc, t) => acc + (t.km_totale || 0), 0), [turniMese]);
+  const kmDisplay = kmTot > 0 ? kmTot.toFixed(1) + " km" : "—";
 
   // Heatmap mese corrente
   const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
@@ -119,10 +122,10 @@ export default function DashboardPage() {
 
       {/* 4 KPI */}
       <div className="grid grid-cols-2 gap-3">
-        <KpiCard icon={Clock}       value={`${oreTot}h`}          label={`Ore — ${MESI[today.getMonth()]}`} index={0} accent />
-        <KpiCard icon={CalendarDays} value={stats.giorniLavorati}  label="Giorni Lavorati"    index={1} />
-        <KpiCard icon={TrendingUp}  value={`${media}h`}            label="Media Giornaliera"  index={2} />
-        <KpiCard icon={Milestone}   value="—"                      label="Km (prossimamente)" index={3} />
+        <KpiCard icon={Clock}        value={oreTot}    label={`Ore — ${MESI[today.getMonth()]}`} index={0} accent />
+        <KpiCard icon={CalendarDays} value={giorni}    label="Giorni Lavorati"   index={1} />
+        <KpiCard icon={TrendingUp}   value={media}     label="Media Giornaliera" index={2} />
+        <KpiCard icon={Milestone}    value={kmDisplay} label="Km Rimborso"       index={3} />
       </div>
 
       {/* Calendario presenze */}
