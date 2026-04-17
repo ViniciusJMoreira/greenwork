@@ -2,6 +2,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "react-hot-toast";
+import { PwaRegister } from "@/components/pwa-register";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -16,6 +17,14 @@ const geistMono = Geist_Mono({
 export const metadata = {
   title: "COOP134 — Gestione Turni",
   description: "Cooperativa Sociale — Gestione ore operai",
+  manifest: "/manifest.webmanifest",
+  themeColor: "#b91c1c",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "COOP134",
+  },
+  icons: { apple: "/icon-192.png" },
 };
 
 export default function RootLayout({ children }) {
@@ -30,6 +39,7 @@ export default function RootLayout({ children }) {
         suppressHydrationWarning
       >
         <ThemeProvider defaultTheme="dark">
+          <PwaRegister />
           {children}
           {/* Toast globale — usa CSS variables del tema per adattarsi a dark/light */}
           <Toaster
