@@ -3,6 +3,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "react-hot-toast";
 import { PwaRegister } from "@/components/pwa-register";
+import { PwaInstallBanner } from "@/components/pwa-install-banner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -40,6 +41,7 @@ export default function RootLayout({ children }) {
       >
         <ThemeProvider defaultTheme="dark">
           <PwaRegister />
+          <PwaInstallBanner />
           {children}
           {/* Toast globale — usa CSS variables del tema per adattarsi a dark/light */}
           <Toaster
