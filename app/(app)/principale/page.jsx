@@ -1,7 +1,7 @@
 "use client";
 import { useMemo } from "react";
 import { motion } from "motion/react";
-import { Clock, CalendarDays, TrendingUp, Milestone } from "lucide-react";
+import { Clock, CalendarDays, UtensilsCrossed, Milestone } from "lucide-react";
 import { useApp } from "@/components/app-context";
 import { getStats } from "@/lib/stats";
 import { calcMin } from "@/lib/utils";
@@ -86,6 +86,16 @@ export default function DashboardPage() {
   const kmTot     = useMemo(() => turniMese.reduce((acc, t) => acc + (t.km_totale || 0), 0), [turniMese]);
   const kmDisplay = kmTot > 0 ? kmTot.toFixed(1) + " km" : "—";
 
+  // Buoni pasto — 1 per ogni giorno con ore totali >= 6.5h
+  const buoniPasto = useMemo(() => {
+    const orePerGiorno = {};
+    turniMese.forEach((t) => {
+      const min = calcMin(t.inizio, t.fine);
+      if (min > 0) orePerGiorno[t.data] = (orePerGiorno[t.data] || 0) + min;
+    });
+    return Object.values(orePerGiorno).filter((min) => min >= 6.5 * 60).length;
+  }, [turniMese]);
+
   // Heatmap mese corrente
   const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
   const firstDayOffset = (() => {
@@ -124,7 +134,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-2 gap-3">
         <KpiCard icon={Clock}        value={oreTot}    label={`Ore — ${MESI[today.getMonth()]}`} index={0} accent />
         <KpiCard icon={CalendarDays} value={giorni}    label="Giorni Lavorati"   index={1} />
-        <KpiCard icon={TrendingUp}   value={media}     label="Media Giornaliera" index={2} />
+        <KpiCard icon={UtensilsCrossed} value={buoniPasto > 0 ? buoniPasto : "—"} label="Buoni Pasto" index={2} />
         <KpiCard icon={Milestone}    value={kmDisplay} label="Km Rimborso"       index={3} />
       </div>
 
