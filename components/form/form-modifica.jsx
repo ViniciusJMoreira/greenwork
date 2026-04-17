@@ -6,6 +6,7 @@ import { calcMin, fmtOre } from "@/lib/utils";
 import { useApp } from "@/components/app-context";
 import { updateTurno } from "@/lib/actions";
 import TimeSelect from "./time-select";
+import KmPercorsoInput from "./km-percorso-input";
 import toast from "react-hot-toast";
 import { Spinner } from "@/components/ui/spinner";
 
@@ -114,7 +115,7 @@ function FormModifica({ turno, onSuccess }) {
   const campiBase = !!cantiere_id && !!lavoro_id && !!inizio && !!fine && minutiForm > 0;
   const campiMezzo = !usaMacchinario || (!!macchinario_id && !!ore_mezzo);
   const campiKm =
-    !usaKm || (!!km_percorso.trim() && !!km_totale && parseFloat(km_totale) > 0);
+    !usaKm || (!!(km_percorso ?? "").trim() && !!km_totale && parseFloat(km_totale) > 0);
   const canSubmit = isAssenza ? !!cantiere_id : campiBase && campiMezzo && campiKm;
 
   useEffect(() => {
@@ -341,11 +342,16 @@ function FormModifica({ turno, onSuccess }) {
         <div className="flex flex-col gap-4">
           <div className={fieldCls}>
             <label className={labelCls}>Percorso effettuato</label>
-            <textarea
-              {...register("km_percorso")}
-              rows={2}
-              placeholder="es. da Viserbella a Spadarolo"
-              className={inputCls + " resize-none"}
+            <Controller
+              name="km_percorso"
+              control={control}
+              render={({ field }) => (
+                <KmPercorsoInput
+                  value={field.value}
+                  onChange={field.onChange}
+                  cantieri={cantieriNormali}
+                />
+              )}
             />
           </div>
           <div className={fieldCls}>

@@ -6,6 +6,7 @@ import { calcMin, fmtOre } from "@/lib/utils";
 import { useApp } from "@/components/app-context";
 import { insertTurno } from "@/lib/actions";
 import TimeSelect from "./time-select";
+import KmPercorsoInput from "./km-percorso-input";
 import toast from "react-hot-toast";
 import { Spinner } from "@/components/ui/spinner";
 
@@ -112,12 +113,14 @@ function FormBody({ onSuccess }) {
   const isAssenza =
     cantieri.find((c) => c.id === Number(cantiere_id))?.isAssenza ?? false;
 
+  const cantieriNormali = cantieri.filter((c) => !c.isAssenza);
+
   // Verifica manuale campi obbligatori — più affidabile di isValid con mode:onChange
   const campiBase =
     !!cantiere_id && !!lavoro_id && !!inizio && !!fine && minutiForm > 0;
   const campiMezzo = !usaMacchinario || (!!macchinario_id && !!ore_mezzo);
   const campiKm =
-    !usaKm || (!!km_percorso.trim() && !!km_totale && parseFloat(km_totale) > 0);
+    !usaKm || (!!(km_percorso ?? "").trim() && !!km_totale && parseFloat(km_totale) > 0);
   const canSubmit = isAssenza ? !!cantiere_id : campiBase && campiMezzo && campiKm;
 
   // Pulisce i campi dipendenti quando cambiano le selezioni principali
@@ -413,11 +416,16 @@ function FormBody({ onSuccess }) {
         <div className="flex flex-col gap-4">
           <div className={fieldCls}>
             <label className={labelCls}>Percorso effettuato</label>
-            <textarea
-              {...register("km_percorso")}
-              rows={2}
-              placeholder="es. da Viserbella a Spadarolo"
-              className={inputCls + " resize-none"}
+            <Controller
+              name="km_percorso"
+              control={control}
+              render={({ field }) => (
+                <KmPercorsoInput
+                  value={field.value}
+                  onChange={field.onChange}
+                  cantieri={cantieriNormali}
+                />
+              )}
             />
           </div>
           <div className={fieldCls}>
