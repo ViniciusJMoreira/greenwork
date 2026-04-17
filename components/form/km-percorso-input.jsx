@@ -26,7 +26,7 @@ function Dropdown({ items, onSelect }) {
       className="absolute z-30 top-full left-0 right-0 mt-1 rounded-lg border shadow-xl overflow-hidden"
       style={{ background: "var(--bg-card)", borderColor: "var(--border)" }}
     >
-      {items.slice(0, 6).map((c) => (
+      {items.slice(0, 3).map((c) => (
         <button
           key={c.id}
           type="button"
@@ -45,18 +45,18 @@ function Dropdown({ items, onSelect }) {
 
 function KmPercorsoInput({ value, onChange, cantieri }) {
   const parsed = parse(value);
-  const [da, setDa]       = useState(parsed.da);
-  const [a, setA]         = useState(parsed.a);
+  const [da, setDa]         = useState(parsed.da);
+  const [a, setA]           = useState(parsed.a);
   const [openDa, setOpenDa] = useState(false);
   const [openA, setOpenA]   = useState(false);
   const aRef = useRef(null);
 
   const filter = (q) =>
-    q ? cantieri.filter((c) => c.cantiere.toLowerCase().includes(q.toLowerCase())) : cantieri;
+    q ? cantieri.filter((c) => c.cantiere.toLowerCase().startsWith(q.toLowerCase())) : [];
 
-  function handleDaChange(v) { setDa(v); setOpenDa(true); onChange(build(v, a)); }
+  function handleDaChange(v) { setDa(v); setOpenDa(v.length > 0); onChange(build(v, a)); }
   function selectDa(nome) { setDa(nome); setOpenDa(false); onChange(build(nome, a)); setTimeout(() => aRef.current?.focus(), 30); }
-  function handleAChange(v) { setA(v); setOpenA(true); onChange(build(da, v)); }
+  function handleAChange(v) { setA(v); setOpenA(v.length > 0); onChange(build(da, v)); }
   function selectA(nome) { setA(nome); setOpenA(false); onChange(build(da, nome)); }
 
   return (
@@ -65,37 +65,28 @@ function KmPercorsoInput({ value, onChange, cantieri }) {
       style={{ background: "var(--bg-subtle)", borderColor: "var(--border)" }}
     >
       <div className="flex gap-3">
-        {/* Icone percorso — cerchio, linea tratteggiata, pin */}
+        {/* Icone percorso */}
         <div className="flex flex-col items-center pt-2.5 shrink-0">
-          {/* Cerchio partenza */}
           <div
             className="w-3 h-3 rounded-full border-2 shrink-0"
             style={{ borderColor: "var(--primary)", background: "var(--bg-card)" }}
           />
-          {/* Linea tratteggiata */}
-          <div className="flex flex-col gap-[3px] my-1">
+          <div className="flex flex-col gap-0.75 my-1">
             {Array.from({ length: 4 }).map((_, i) => (
-              <div
-                key={i}
-                className="w-0.5 h-1 rounded-full mx-auto"
-                style={{ background: "var(--text-faint)" }}
-              />
+              <div key={i} className="w-0.5 h-1 rounded-full mx-auto" style={{ background: "var(--text-faint)" }} />
             ))}
           </div>
-          {/* Pin arrivo */}
           <MapPin className="h-4 w-4 shrink-0" style={{ color: "#dc2626" }} strokeWidth={2.2} />
         </div>
 
         {/* Inputs */}
         <div className="flex flex-col gap-2 flex-1 min-w-0">
-          {/* Da */}
           <div className="relative">
             <input
               type="text"
               value={da}
               placeholder="Partenza..."
               onChange={(e) => handleDaChange(e.target.value)}
-              onFocus={() => setOpenDa(true)}
               onBlur={() => setTimeout(() => setOpenDa(false), 150)}
               className={inputCls}
               autoComplete="off"
@@ -103,7 +94,6 @@ function KmPercorsoInput({ value, onChange, cantieri }) {
             {openDa && <Dropdown items={filter(da)} onSelect={selectDa} />}
           </div>
 
-          {/* A */}
           <div className="relative">
             <input
               ref={aRef}
@@ -111,7 +101,6 @@ function KmPercorsoInput({ value, onChange, cantieri }) {
               value={a}
               placeholder="Arrivo..."
               onChange={(e) => handleAChange(e.target.value)}
-              onFocus={() => setOpenA(true)}
               onBlur={() => setTimeout(() => setOpenA(false), 150)}
               className={inputCls}
               autoComplete="off"
