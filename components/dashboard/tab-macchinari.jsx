@@ -1,7 +1,7 @@
 "use client";
 import { useMemo, useState } from "react";
 import { motion } from "motion/react";
-import { Wrench, ChevronDown } from "lucide-react";
+import { Tractor, ChevronDown } from "lucide-react";
 
 const MESI = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
 
@@ -78,7 +78,7 @@ export default function TabMacchinari({ turni: tuttiTurni, macchinari }) {
       {righe.length === 0 ? (
         <div className="rounded-xl border flex flex-col items-center justify-center py-16 gap-3"
           style={{ background: "var(--bg-card)", borderColor: "var(--border)" }}>
-          <Wrench className="h-10 w-10" style={{ color: "var(--text-faint)" }} />
+          <Tractor className="h-10 w-10" style={{ color: "var(--text-faint)" }} />
           <p className="font-medium text-sm" style={{ color: "var(--text)" }}>Nessun macchinario utilizzato</p>
           <p className="text-xs" style={{ color: "var(--text-muted)" }}>per {mesiOptions.find((m) => m.value === mese)?.label}</p>
         </div>
@@ -110,7 +110,7 @@ function RigaMezzo({ riga, index }) {
       >
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: "var(--primary-faint)" }}>
-            <Wrench className="h-4 w-4" style={{ color: "var(--primary)" }} />
+            <Tractor className="h-4 w-4" style={{ color: "var(--primary)" }} />
           </div>
           <div className="text-left">
             <p className="text-sm font-semibold" style={{ color: "var(--text)" }}>{riga.nome}</p>
