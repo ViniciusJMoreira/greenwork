@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Building2, Users, Hammer, Wrench, ChevronDown } from "lucide-react";
+import { Building2, Users, Hammer, Wrench, ChevronDown, BriefcaseMedical } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { insertCantiere, insertDipendente, insertLavoro, insertMacchinario } from "@/lib/actions";
 import toast from "react-hot-toast";
@@ -49,17 +49,37 @@ function Sezione({ label, icon: Icon, children }) {
   );
 }
 
+function Switch({ checked, onChange }) {
+  return (
+    <motion.button
+      type="button"
+      onClick={() => onChange(!checked)}
+      whileTap={{ scale: 0.9 }}
+      className="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-200"
+      style={{ background: checked ? "var(--primary)" : "var(--border-strong)" }}
+    >
+      <motion.span
+        animate={{ x: checked ? 22 : 2 }}
+        transition={{ type: "spring", stiffness: 500, damping: 26 }}
+        className="inline-block h-4 w-4 rounded-full bg-white shadow"
+      />
+    </motion.button>
+  );
+}
+
 function FormCantiere() {
-  const [saving, setSaving] = useState(false);
+  const [saving,    setSaving]    = useState(false);
+  const [isAssenza, setIsAssenza] = useState(false);
   const { register, handleSubmit, reset, formState: { isValid } } = useForm({ mode: "onChange" });
 
   async function onSubmit(values) {
     setSaving(true);
-    const res = await insertCantiere(values);
+    const res = await insertCantiere({ ...values, isAssenza });
     setSaving(false);
     if (!res.success) return toast.error(res.error ?? "Errore inserimento");
     toast.success(`Cantiere "${values.cantiere}" aggiunto!`);
     reset();
+    setIsAssenza(false);
   }
 
   return (
@@ -74,6 +94,26 @@ function FormCantiere() {
           <input {...register("cod_cantiere", { required: true })} placeholder="es. 004501V15813" className={inputCls} />
         </div>
       </div>
+
+      {/* Toggle assenza */}
+      <div
+        className="rounded-lg px-4 py-3 flex items-center justify-between border"
+        style={{ background: isAssenza ? "var(--primary-faint)" : "var(--bg-subtle)", borderColor: isAssenza ? "var(--primary)" + "44" : "var(--border)", transition: "all 0.2s" }}
+      >
+        <div className="flex items-center gap-2.5">
+          <BriefcaseMedical className="h-4 w-4 shrink-0" style={{ color: isAssenza ? "var(--primary)" : "var(--text-muted)" }} />
+          <div>
+            <p className="text-sm font-medium" style={{ color: isAssenza ? "var(--primary)" : "var(--text)" }}>
+              Giornata fuori cantiere
+            </p>
+            <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+              Ferie · Malattia · Permesso · Festivo
+            </p>
+          </div>
+        </div>
+        <Switch checked={isAssenza} onChange={setIsAssenza} />
+      </div>
+
       <SubmitBtn saving={saving} disabled={!isValid} label="Aggiungi Cantiere" />
     </form>
   );
