@@ -6,6 +6,7 @@ import {
   Users,
   Hammer,
   Wrench,
+  Tractor,
   ChevronDown,
   BriefcaseMedical,
 } from "lucide-react";
@@ -394,7 +395,7 @@ export default function TabAnagrafica() {
       <Sezione id="lavoro" label="Tipo Lavoro" icon={Hammer}>
         <FormLavoro />
       </Sezione>
-      <Sezione id="macchinario" label="Macchinario" icon={Wrench}>
+      <Sezione id="macchinario" label="Macchinario" icon={Tractor}>
         <FormMacchinario />
       </Sezione>
     </div>
