@@ -6,6 +6,7 @@ import {
   CalendarDays,
   Milestone,
   Wrench,
+  Tractor,
   BookUser,
   FileDown,
 } from "lucide-react";
@@ -20,7 +21,7 @@ const TABS = [
   { id: "riepilogo",   label: "Riepilogo",    icon: BarChart2    },
   { id: "turni",       label: "Turni",        icon: CalendarDays },
   { id: "km",          label: "Km / Rimborsi",icon: Milestone    },
-  { id: "macchinari",  label: "Macchinari",   icon: Wrench       },
+  { id: "macchinari",  label: "Macchinari",   icon: Tractor      },
   { id: "anagrafica",  label: "Anagrafica",   icon: BookUser     },
   { id: "export",      label: "Export",       icon: FileDown     },
 ];
