@@ -5,19 +5,6 @@ import { FileDown, Download } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 
 const MESI = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
-const GIORNI_ABB = ["dom","lun","mar","mer","gio","ven","sab"];
-
-// Numero di giorni in un mese (es. "2026-04" → 30)
-function giorniNelMese(meseStr) {
-  const [y, m] = meseStr.split("-").map(Number);
-  return new Date(y, m, 0).getDate();
-}
-
-// Converte "YYYY-MM" in Date del primo giorno
-function primoDelMese(meseStr) {
-  const [y, m] = meseStr.split("-").map(Number);
-  return new Date(y, m - 1, 1);
-}
 
 export default function TabExport({ turni: tuttiTurni, dipendenti, cantieri, macchinari }) {
   const today = new Date();
@@ -44,149 +31,26 @@ export default function TabExport({ turni: tuttiTurni, dipendenti, cantieri, mac
   async function generaExcel() {
     setLoading(true);
     try {
-      const xlsxMod = await import("xlsx");
-      const XLSX = xlsxMod.default ?? xlsxMod;
-      const wb   = XLSX.utils.book_new();
-      const nGiorni = giorniNelMese(mese);
+      const res = await fetch("/api/export-excel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mese }),
+      });
+      if (!res.ok) {
+        const { error } = await res.json().catch(() => ({}));
+        throw new Error(error || "Errore generazione Excel");
+      }
+      const blob = await res.blob();
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement("a");
       const [anno, mesNum] = mese.split("-").map(Number);
-
-      // Date Excel per riga 1 (colonne giornaliere)
-      const dateRiga1 = Array.from({ length: nGiorni }, (_, i) =>
-        new Date(anno, mesNum - 1, i + 1)
-      );
-
-      // Riga 2: abbreviazioni giorno (lun/mar/mer...)
-      const abbGiorni = dateRiga1.map((d) => GIORNI_ABB[d.getDay()]);
-
-      // ── Foglio Cantieri (lookup) ───────────────────────────────────────
-      const wsCantieri = XLSX.utils.aoa_to_sheet([
-        ["Cantieri", "Codici"],
-        ...cantieri.map((c) => [c.cantiere, c.cod_cantiere]),
-      ]);
-      wsCantieri["!cols"] = [{ wch: 30 }, { wch: 20 }];
-      XLSX.utils.book_append_sheet(wb, wsCantieri, "Cantieri");
-
-      // ── Foglio Contabilità ─────────────────────────────────────────────
-      // Struttura: DIPENDENTE | COD. DIPENDENTE | CANTIERE | D..AG/AH(giorni) | TOT MESE
-      const intestazioneContab = ["DIPENDENTE", "COD. DIPENDENTE", "CANTIERE", ...dateRiga1, "TOT MESE"];
-      const riga2Contab        = ["", "", "", ...abbGiorni, ""];
-      const righeContab        = [intestazioneContab, riga2Contab];
-
-      dipendenti.forEach((dip) => {
-        const turniDip = turniMese.filter((t) => String(t.dipendente_id) === String(dip.id));
-        const orePerCantiere = {};
-        turniDip.forEach((t) => {
-          const key = t.cantiere || "—";
-          if (!orePerCantiere[key]) orePerCantiere[key] = Array(nGiorni).fill(0);
-          const giorno = parseInt(t.data?.split("-")[2]) - 1;
-          if (giorno >= 0 && giorno < nGiorni) orePerCantiere[key][giorno] += t.ore_totali || 0;
-        });
-        Object.entries(orePerCantiere).forEach(([nomeCantiere, oreGiorni], idx) => {
-          const totMese = oreGiorni.reduce((a, b) => a + b, 0);
-          righeContab.push([
-            idx === 0 ? `${dip.cognome?.toUpperCase()} ${dip.nome?.[0]}.` : "",
-            idx === 0 ? (dip.cod_dipendente || "") : "",
-            nomeCantiere,
-            ...oreGiorni.map((v) => v > 0 ? v : ""),
-            totMese > 0 ? totMese : "",
-          ]);
-        });
-      });
-
-      const wsContab = XLSX.utils.aoa_to_sheet(righeContab);
-      wsContab["!cols"] = [{ wch: 18 }, { wch: 14 }, { wch: 28 }, ...Array(nGiorni).fill({ wch: 5 }), { wch: 10 }];
-      XLSX.utils.book_append_sheet(wb, wsContab, `Contabilità ${mese}`);
-
-      // ── Foglio Buste Paghe ─────────────────────────────────────────────
-      // Struttura: DIPENDENTE | COD. DIPENDENTE | COD. CANTIERE | COD. MEZZO | E..AI(giorni) | TOT MESE
-      const intestazioneBuste = ["DIPENDENTE", "COD. DIPENDENTE", "COD. CANTIERE", "COD. MEZZO", ...dateRiga1, "TOT MESE"];
-      const riga2Buste        = ["", "", "", "", ...abbGiorni, ""];
-      const righeBuste        = [intestazioneBuste, riga2Buste];
-
-      dipendenti.forEach((dip) => {
-        const turniDip = turniMese.filter((t) => String(t.dipendente_id) === String(dip.id));
-        const orePerCantiere = {};
-        turniDip.forEach((t) => {
-          const cantiere = cantieri.find((c) => String(c.id) === String(t.cantiere_id));
-          const mezzo    = macchinari.find((m) => String(m.id) === String(t.mezzo_id));
-          const codCantiere = cantiere?.cod_cantiere || "—";
-          const codMezzo    = mezzo?.cod_mezzo || "";
-          const key = `${codCantiere}||${codMezzo}`;
-          if (!orePerCantiere[key]) orePerCantiere[key] = { codCantiere, codMezzo, giorni: Array(nGiorni).fill(0) };
-          const giorno = parseInt(t.data?.split("-")[2]) - 1;
-          if (giorno >= 0 && giorno < nGiorni) orePerCantiere[key].giorni[giorno] += t.ore_totali || 0;
-        });
-        Object.values(orePerCantiere).forEach((v, idx) => {
-          const totMese = v.giorni.reduce((a, b) => a + b, 0);
-          righeBuste.push([
-            idx === 0 ? `${dip.cognome?.toUpperCase()} ${dip.nome?.[0]}.` : "",
-            idx === 0 ? (dip.cod_dipendente || "") : "",
-            v.codCantiere,
-            v.codMezzo,
-            ...v.giorni.map((x) => x > 0 ? x : ""),
-            totMese > 0 ? totMese : "",
-          ]);
-        });
-      });
-
-      const wsBuste = XLSX.utils.aoa_to_sheet(righeBuste);
-      wsBuste["!cols"] = [{ wch: 18 }, { wch: 14 }, { wch: 20 }, { wch: 12 }, ...Array(nGiorni).fill({ wch: 5 }), { wch: 10 }];
-      XLSX.utils.book_append_sheet(wb, wsBuste, `Buste Paghe ${mese}`);
-
-      // ── Foglio Mezzi ───────────────────────────────────────────────────
-      const intestazioneMezzi = ["COD. MEZZI", "MEZZI", "", "", ...dateRiga1, "TOT MESE"];
-      const riga2Mezzi        = ["", "", "", "", ...abbGiorni, ""];
-      const righeMezzi        = [intestazioneMezzi, riga2Mezzi];
-
-      macchinari.forEach((m) => {
-        const turniMezzo = turniMese.filter((t) => String(t.mezzo_id) === String(m.id) && t.ore_mezzo > 0);
-        const oreGiorni  = Array(nGiorni).fill(0);
-        turniMezzo.forEach((t) => {
-          const g = parseInt(t.data?.split("-")[2]) - 1;
-          if (g >= 0 && g < nGiorni) oreGiorni[g] += t.ore_mezzo || 0;
-        });
-        const totMese = oreGiorni.reduce((a, b) => a + b, 0);
-        if (totMese > 0) {
-          righeMezzi.push([m.cod_mezzo, m.mezzo, "", "", ...oreGiorni.map((v) => v > 0 ? v : ""), totMese]);
-        }
-      });
-
-      const wsMezzi = XLSX.utils.aoa_to_sheet(righeMezzi);
-      wsMezzi["!cols"] = [{ wch: 12 }, { wch: 24 }, { wch: 4 }, { wch: 4 }, ...Array(nGiorni).fill({ wch: 5 }), { wch: 10 }];
-      XLSX.utils.book_append_sheet(wb, wsMezzi, `Mezzi ${mese}`);
-
-      // ── Foglio Km ──────────────────────────────────────────────────────
-      const intestazioneKm = ["COD. DIPENDENTE", "DIPENDENTE", "", "", ...dateRiga1, "TOT MESE"];
-      const riga2Km        = ["", "", "", "", ...abbGiorni, ""];
-      const righeKm        = [intestazioneKm, riga2Km];
-
-      dipendenti.forEach((dip) => {
-        const turniKm = turniMese.filter((t) => String(t.dipendente_id) === String(dip.id) && t.km_totale > 0);
-        if (!turniKm.length) return;
-        const kmGiorni = Array(nGiorni).fill(0);
-        turniKm.forEach((t) => {
-          const g = parseInt(t.data?.split("-")[2]) - 1;
-          if (g >= 0 && g < nGiorni) kmGiorni[g] += t.km_totale || 0;
-        });
-        const totMese = kmGiorni.reduce((a, b) => a + b, 0);
-        righeKm.push([
-          dip.cod_dipendente || "",
-          `${dip.nome} ${dip.cognome}`,
-          "", "",
-          ...kmGiorni.map((v) => v > 0 ? v : ""),
-          totMese > 0 ? totMese : "",
-        ]);
-      });
-
-      const wsKm = XLSX.utils.aoa_to_sheet(righeKm);
-      wsKm["!cols"] = [{ wch: 14 }, { wch: 24 }, { wch: 4 }, { wch: 4 }, ...Array(nGiorni).fill({ wch: 5 }), { wch: 10 }];
-      XLSX.utils.book_append_sheet(wb, wsKm, `Km ${mese}`);
-
-      // ── Download ───────────────────────────────────────────────────────
-      const nomeMese = MESI[mesNum - 1];
-      XLSX.writeFile(wb, `COOP134_${nomeMese}_${anno}.xlsx`);
+      a.href     = url;
+      a.download = `COOP134_${MESI[mesNum - 1]}_${anno}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
     } catch (err) {
       console.error(err);
+      alert(err.message);
     } finally {
       setLoading(false);
     }
