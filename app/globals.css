@@ -68,6 +68,9 @@
   body { background: var(--bg); color: var(--text); font-family: var(--font-geist-sans, system-ui, sans-serif); }
 }
 
+/* ── Previene zoom automatico iOS su input/select/textarea ─────────────── */
+input, select, textarea { font-size: 16px; }
+
 /* ── Scrollbar sottile ─────────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
