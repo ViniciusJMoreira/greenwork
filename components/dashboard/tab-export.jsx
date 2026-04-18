@@ -44,7 +44,8 @@ export default function TabExport({ turni: tuttiTurni, dipendenti, cantieri, mac
   async function generaExcel() {
     setLoading(true);
     try {
-      const XLSX = (await import("xlsx")).default;
+      const xlsxMod = await import("xlsx");
+      const XLSX = xlsxMod.default ?? xlsxMod;
       const wb   = XLSX.utils.book_new();
       const nGiorni = giorniNelMese(mese);
       const [anno, mesNum] = mese.split("-").map(Number);
