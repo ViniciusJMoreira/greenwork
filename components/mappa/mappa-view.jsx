@@ -1,11 +1,14 @@
 // This file is always loaded via dynamic(() => import(...), { ssr: false })
 "use client";
+import "leaflet/dist/leaflet.css";
 import { useMemo, useEffect } from "react";
 import { MapContainer, TileLayer, Marker, Popup, GeoJSON, useMap } from "react-leaflet";
 import L from "leaflet";
 
-const ESRI_TILES =
+const ESRI_SAT =
   "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
+const ESRI_LABELS =
+  "https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}";
 const ITALY_CENTER = [44.494887, 11.342616];
 
 function makeIcon(color = "#b91c1c") {
@@ -42,7 +45,8 @@ export default function MappaView({ cantieri, onEdit }) {
 
   return (
     <MapContainer center={ITALY_CENTER} zoom={6} style={{ height: "100%", width: "100%" }}>
-      <TileLayer url={ESRI_TILES} attribution="© Esri" />
+      <TileLayer url={ESRI_SAT} attribution="© Esri" />
+      <TileLayer url={ESRI_LABELS} attribution="" />
       <FitBounds positions={positions} />
 
       {positioned.map((c) => (

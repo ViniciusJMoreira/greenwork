@@ -25,8 +25,8 @@ const TABS = [
   { id: "km",          label: "Km / Rimborsi",icon: Milestone    },
   { id: "macchinari",  label: "Macchinari",   icon: Tractor      },
   { id: "anagrafica",  label: "Anagrafica",   icon: BookUser     },
-  { id: "export",      label: "Export",       icon: FileDown     },
   { id: "mappa",       label: "Mappa",        icon: Map          },
+  { id: "export",      label: "Export",       icon: FileDown     },
 ];
 
 export default function DashboardShell({ turni, dipendenti, cantieri, lavori, macchinari }) {
