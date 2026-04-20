@@ -10,7 +10,7 @@ import {
 } from "recharts";
 
 const MESI = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
-const RED  = ["#b91c1c","#dc2626","#ef4444","#f87171","#fca5a5"];
+const RED  = ["#b91c1c","#dc2626","#ef4444","#f87171","#fca5a5","#fecaca","#991b1b","#7f1d1d","#fee2e2","#450a0a"];
 
 function StatCard({ icon: Icon, value, label, index = 0 }) {
   return (
@@ -63,8 +63,9 @@ export default function TabRiepilogo({ turni: tuttiTurni, dipendenti }) {
       .sort((a, b) => b.ore - a.ore);
   }, [turniMese]);
 
-  const pieData    = useMemo(() => getPieData(turniMese).slice(0, 5), [turniMese]);
-  const totMinPie  = pieData.reduce((a, c) => a + c.min, 0);
+  const allCantieri = useMemo(() => getPieData(turniMese), [turniMese]);
+  const pieData     = useMemo(() => allCantieri.slice(0, 5), [allCantieri]);
+  const totMinPie  = allCantieri.reduce((a, c) => a + c.min, 0);
   const orePerGiorno = useMemo(() => getOrePerGiorno(turniMese, 14), [turniMese]);
 
   return (
@@ -133,8 +134,8 @@ export default function TabRiepilogo({ turni: tuttiTurni, dipendenti }) {
                     <Tooltip formatter={(v) => [`${v}h`, "Ore"]} contentStyle={{ background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 11 }} />
                   </PieChart>
                 </ResponsiveContainer>
-                <div className="flex flex-col gap-1 mt-1">
-                  {pieData.map((c, i) => (
+                <div className="flex flex-col gap-1 mt-1 max-h-36 overflow-y-auto pr-1">
+                  {allCantieri.map((c, i) => (
                     <div key={c.nome} className="flex items-center gap-2 text-xs">
                       <div className="w-2 h-2 rounded-full shrink-0" style={{ background: RED[i % RED.length] }} />
                       <span className="flex-1 truncate" style={{ color: "var(--text-muted)" }}>{c.nome}</span>
