@@ -1,62 +1,65 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+/* ── Leaflet ─────────────────────────────────────────────────────────────── */
+@import "leaflet/dist/leaflet.css";
+@import "@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css";
 
 @custom-variant dark (&:is(.dark *));
 
 /* ── COOP134 Light ─────────────────────────────────────────────────────── */
 :root {
-  --bg:          #f8fafc;
-  --bg-card:     #ffffff;
-  --bg-subtle:   #f1f5f9;
-  --bg-hover:    #e2e8f0;
-  --border:      #e2e8f0;
+  --bg: #f8fafc;
+  --bg-card: #ffffff;
+  --bg-subtle: #f1f5f9;
+  --bg-hover: #e2e8f0;
+  --border: #e2e8f0;
   --border-strong: #cbd5e1;
-  --text:        #0f172a;
-  --text-muted:  #64748b;
-  --text-faint:  #94a3b8;
-  --primary:     #b91c1c;
+  --text: #0f172a;
+  --text-muted: #64748b;
+  --text-faint: #94a3b8;
+  --primary: #b91c1c;
   --primary-hover: #991b1b;
   --primary-faint: #fef2f2;
   --primary-light: #fee2e2;
-  --ring:        #b91c1c;
+  --ring: #b91c1c;
   --destructive: #dc2626;
-  --radius:      8px;
+  --radius: 8px;
 }
 
 /* ── COOP134 Dark ──────────────────────────────────────────────────────── */
 .dark {
-  --bg:          #0c0e12;
-  --bg-card:     #141720;
-  --bg-subtle:   #1a1e2a;
-  --bg-hover:    #222636;
-  --border:      #1f2535;
+  --bg: #0c0e12;
+  --bg-card: #141720;
+  --bg-subtle: #1a1e2a;
+  --bg-hover: #222636;
+  --border: #1f2535;
   --border-strong: #2d3348;
-  --text:        #f1f5f9;
-  --text-muted:  #8b95b0;
-  --text-faint:  #4a5270;
-  --primary:     #ef4444;
+  --text: #f1f5f9;
+  --text-muted: #8b95b0;
+  --text-faint: #4a5270;
+  --primary: #ef4444;
   --primary-hover: #dc2626;
   --primary-faint: #1f1015;
   --primary-light: #2d1515;
-  --ring:        #ef4444;
+  --ring: #ef4444;
   --destructive: #f87171;
 }
 
 @theme inline {
-  --color-background:    var(--bg);
-  --color-foreground:    var(--text);
-  --color-card:          var(--bg-card);
+  --color-background: var(--bg);
+  --color-foreground: var(--text);
+  --color-card: var(--bg-card);
   --color-card-foreground: var(--text);
-  --color-border:        var(--border);
-  --color-input:         var(--border);
-  --color-primary:       var(--primary);
+  --color-border: var(--border);
+  --color-input: var(--border);
+  --color-primary: var(--primary);
   --color-primary-foreground: #ffffff;
-  --color-muted:         var(--bg-subtle);
+  --color-muted: var(--bg-subtle);
   --color-muted-foreground: var(--text-muted);
-  --color-accent:        var(--bg-subtle);
+  --color-accent: var(--bg-subtle);
   --color-accent-foreground: var(--text);
-  --color-destructive:   var(--destructive);
-  --color-ring:          var(--ring);
+  --color-destructive: var(--destructive);
+  --color-ring: var(--ring);
   --radius-sm: calc(var(--radius) - 2px);
   --radius-md: var(--radius);
   --radius-lg: calc(var(--radius) + 4px);
@@ -64,14 +67,32 @@
 }
 
 @layer base {
-  * { @apply border-border; }
-  body { background: var(--bg); color: var(--text); font-family: var(--font-geist-sans, system-ui, sans-serif); }
+  * {
+    @apply border-border;
+  }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-geist-sans, system-ui, sans-serif);
+  }
 }
 
 /* ── Previene zoom automatico iOS su input/select/textarea ─────────────── */
-input, select, textarea { font-size: 16px; }
+input,
+select,
+textarea {
+  font-size: 16px;
+}
 
 /* ── Scrollbar sottile ─────────────────────────────────────────────────── */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 99px; }
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 99px;
+}
