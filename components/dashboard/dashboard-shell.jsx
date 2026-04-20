@@ -9,6 +9,7 @@ import {
   Tractor,
   BookUser,
   FileDown,
+  Map,
 } from "lucide-react";
 import TabRiepilogo   from "./tab-riepilogo";
 import TabTurni       from "./tab-turni";
@@ -16,6 +17,7 @@ import TabKm          from "./tab-km";
 import TabMacchinari  from "./tab-macchinari";
 import TabAnagrafica  from "./tab-anagrafica";
 import TabExport      from "./tab-export";
+import TabMappa       from "./tab-mappa";
 
 const TABS = [
   { id: "riepilogo",   label: "Riepilogo",    icon: BarChart2    },
@@ -24,6 +26,7 @@ const TABS = [
   { id: "macchinari",  label: "Macchinari",   icon: Tractor      },
   { id: "anagrafica",  label: "Anagrafica",   icon: BookUser     },
   { id: "export",      label: "Export",       icon: FileDown     },
+  { id: "mappa",       label: "Mappa",        icon: Map          },
 ];
 
 export default function DashboardShell({ turni, dipendenti, cantieri, lavori, macchinari }) {
@@ -115,6 +118,7 @@ export default function DashboardShell({ turni, dipendenti, cantieri, lavori, ma
             {activeTab === "macchinari" && <TabMacchinari {...tabProps} />}
             {activeTab === "anagrafica" && <TabAnagrafica {...tabProps} />}
             {activeTab === "export"     && <TabExport     {...tabProps} />}
+            {activeTab === "mappa"      && <TabMappa      cantieri={cantieri} />}
           </motion.div>
         </AnimatePresence>
       </div>
