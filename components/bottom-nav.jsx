@@ -1,13 +1,14 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, ClockArrowUp, History, Home } from "lucide-react";
+import { LayoutDashboard, ClockArrowUp, History, Home, Map } from "lucide-react";
 import { useApp } from "@/components/app-context";
 
 const baseLinks = [
   { href: "/principale", label: "Principale", icon: Home },
   { href: "/storico",   label: "Storico",    icon: History },
   { href: "/inserisci", label: "Inserisci",  icon: ClockArrowUp },
+  { href: "/mappa",     label: "Mappa",      icon: Map           },
 ];
 
 const responsabileLink = { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard };
@@ -23,7 +24,7 @@ export function BottomNav() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 md:hidden border-t"
+      className="fixed bottom-0 left-0 right-0 z-[9999] md:hidden border-t"
       style={{ background: "var(--bg-card)", borderColor: "var(--border)" }}
     >
       <div className="flex items-stretch h-16">

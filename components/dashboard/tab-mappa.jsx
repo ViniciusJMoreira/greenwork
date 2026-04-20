@@ -62,7 +62,7 @@ export default function TabMappa({ cantieri: initialCantieri }) {
       <motion.div
         initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}
         className="rounded-xl border overflow-hidden"
-        style={{ height: 420, background: "var(--bg-card)", borderColor: "var(--border)" }}
+        style={{ height: 420, background: "var(--bg-card)", borderColor: "var(--border)", isolation: "isolate" }}
       >
         {editing ? (
           <MappaEditor

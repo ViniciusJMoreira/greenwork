@@ -3,7 +3,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { useTheme } from "@/components/theme-provider";
-import { Sun, Moon, LogOut, ChevronDown, Home, History, ClockArrowUp, LayoutDashboard } from "lucide-react";
+import { Sun, Moon, LogOut, ChevronDown, Home, History, ClockArrowUp, LayoutDashboard, Map } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useApp } from "@/components/app-context";
 import Image from "next/image";
@@ -12,6 +12,7 @@ const baseNavLinks = [
   { href: "/principale", label: "Principale", icon: Home },
   { href: "/storico",    label: "Storico",    icon: History },
   { href: "/inserisci",  label: "Inserisci",  icon: ClockArrowUp },
+  { href: "/mappa",      label: "Mappa",      icon: Map           },
 ];
 
 export function TopBar() {
