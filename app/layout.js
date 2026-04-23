@@ -15,6 +15,12 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
+
 export const metadata = {
   title: "COOP134 — Gestione Turni",
   description: "Cooperativa Sociale — Gestione ore operai",

@@ -25,9 +25,13 @@ export function BottomNav() {
   return (
     <nav
       className="fixed bottom-0 left-0 right-0 z-[9999] md:hidden border-t"
-      style={{ background: "var(--bg-card)", borderColor: "var(--border)" }}
+      style={{
+        background: "var(--bg-card)",
+        borderColor: "var(--border)",
+        paddingBottom: "max(16px, env(safe-area-inset-bottom))",
+      }}
     >
-      <div className="flex items-stretch h-16">
+      <div className="flex items-stretch pt-3 pb-1">
         {navLinks.map(({ href, label, icon: Icon }) => {
           const active = pathname === href;
           return (
@@ -38,7 +42,7 @@ export function BottomNav() {
               style={{ color: active ? "var(--primary)" : "var(--text-faint)" }}
             >
               <div
-                className="w-10 h-6 rounded-full flex items-center justify-center transition-all"
+                className="w-10 h-7 rounded-full flex items-center justify-center transition-all"
                 style={{ background: active ? "var(--primary-light)" : "transparent" }}
               >
                 <Icon className="h-4.5 w-4.5" strokeWidth={active ? 2.2 : 1.8} />
@@ -53,8 +57,6 @@ export function BottomNav() {
           );
         })}
       </div>
-      {/* Safe area iOS */}
-      <div style={{ height: "env(safe-area-inset-bottom)" }} />
     </nav>
   );
 }
