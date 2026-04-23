@@ -49,7 +49,11 @@ export function TopBar() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: "spring", damping: 22, stiffness: 280 }}
       className="sticky top-0 z-50 w-full border-b backdrop-blur-sm"
-      style={{ background: "var(--bg-card)", borderColor: "var(--border)" }}
+      style={{
+        background: "var(--bg-card)",
+        borderColor: "var(--border)",
+        paddingTop: "env(safe-area-inset-top)",
+      }}
     >
       <div className="max-w-5xl mx-auto px-4">
         {/* Riga principale: logo + nav + user */}

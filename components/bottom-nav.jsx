@@ -31,7 +31,7 @@ export function BottomNav() {
         paddingBottom: "max(16px, env(safe-area-inset-bottom))",
       }}
     >
-      <div className="flex items-stretch pt-3 pb-1">
+      <div className="flex items-stretch py-3">
         {navLinks.map(({ href, label, icon: Icon }) => {
           const active = pathname === href;
           return (
