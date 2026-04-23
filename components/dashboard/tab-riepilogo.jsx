@@ -16,6 +16,7 @@ import {
   getOrePerGiorno,
   getPieData,
   getOreLavori,
+  getAndamentoMulti,
 } from "@/lib/stats";
 import { calcMin } from "@/lib/utils";
 import {
@@ -423,7 +424,10 @@ export default function TabRiepilogo({ turni: tuttiTurni, dipendenti }) {
     [turniMese],
   );
   const orePerGiorno = useMemo(
-    () => getOrePerGiorno(turniMese, 14),
+    () => getAndamentoMulti(turniMese, [
+      { key: "oreSfalcio",  nomi: SFALCIO_LAVORI  },
+      { key: "oreCustodia", nomi: CUSTODIA_LAVORI },
+    ], 14),
     [turniMese],
   );
 
@@ -593,16 +597,16 @@ export default function TabRiepilogo({ turni: tuttiTurni, dipendenti }) {
                 >
                   <defs>
                     <linearGradient id="teamGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop
-                        offset="0%"
-                        stopColor="var(--primary)"
-                        stopOpacity={0.25}
-                      />
-                      <stop
-                        offset="100%"
-                        stopColor="var(--primary)"
-                        stopOpacity={0}
-                      />
+                      <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.25} />
+                      <stop offset="100%" stopColor="var(--primary)" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="sfalcioGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#16a34a" stopOpacity={0.2} />
+                      <stop offset="100%" stopColor="#16a34a" stopOpacity={0} />
+                    </linearGradient>
+                    <linearGradient id="custodiaGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#1d4ed8" stopOpacity={0.2} />
+                      <stop offset="100%" stopColor="#1d4ed8" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid
@@ -623,6 +627,16 @@ export default function TabRiepilogo({ turni: tuttiTurni, dipendenti }) {
                     width={28}
                   />
                   <Tooltip content={<ChartTooltip />} />
+                  <Area type="monotone" dataKey="oreSfalcio" name="Sfalcio"
+                    stroke="#16a34a" strokeWidth={1.5} fill="url(#sfalcioGrad)"
+                    dot={{ r: 2, fill: "#16a34a", strokeWidth: 0 }}
+                    activeDot={{ r: 4, fill: "#16a34a", strokeWidth: 2, stroke: "var(--bg-card)" }}
+                  />
+                  <Area type="monotone" dataKey="oreCustodia" name="Custodia"
+                    stroke="#1d4ed8" strokeWidth={1.5} fill="url(#custodiaGrad)"
+                    dot={{ r: 2, fill: "#1d4ed8", strokeWidth: 0 }}
+                    activeDot={{ r: 4, fill: "#1d4ed8", strokeWidth: 2, stroke: "var(--bg-card)" }}
+                  />
                   <Area
                     type="monotone"
                     dataKey="ore"
