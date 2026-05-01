@@ -52,6 +52,7 @@ export default function RootLayout({ children }) {
           {/* Toast globale — usa CSS variables del tema per adattarsi a dark/light */}
           <Toaster
             position="top-right"
+            containerStyle={{ top: "calc(env(safe-area-inset-top) + 8px)", right: 8 }}
             toastOptions={{
               duration: 3500,
               style: {

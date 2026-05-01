@@ -19,6 +19,12 @@ import { deleteTurno } from "@/lib/actions";
 import { calcMin, fmtOre, fmtData } from "@/lib/utils";
 
 const GIORNI = ["dom", "lun", "mar", "mer", "gio", "ven", "sab"];
+const MESI_IT = ["Gen","Feb","Mar","Apr","Mag","Giu","Lug","Ago","Set","Ott","Nov","Dic"];
+
+function fmtMese(ym) {
+  const [y, m] = ym.split("-");
+  return `${MESI_IT[parseInt(m) - 1]} ${y}`;
+}
 
 function formatHeader(dataStr) {
   const [y, m, d] = dataStr.split("-").map(Number);
@@ -61,14 +67,12 @@ function ShiftCard({ record, onDelete, onEdit, index = 0 }) {
         (e.currentTarget.style.borderColor = "var(--border)")
       }
     >
-      {/* Left accent */}
       <div
         className="w-0.5 self-stretch rounded-full shrink-0 mt-0.5"
         style={{ background: "var(--primary)" }}
       />
 
       <div className="flex-1 min-w-0">
-        {/* Riga 1: cantiere + badge lavoro */}
         <div className="flex items-center gap-2 flex-wrap">
           <span
             className="text-sm font-semibold truncate"
@@ -79,7 +83,6 @@ function ShiftCard({ record, onDelete, onEdit, index = 0 }) {
           {record.lavoro && <Pill>{record.lavoro}</Pill>}
         </div>
 
-        {/* Riga 2: orario + ore */}
         <div className="flex items-center gap-3 mt-1 flex-wrap">
           <span
             className="text-xs font-mono tabular-nums"
@@ -95,7 +98,6 @@ function ShiftCard({ record, onDelete, onEdit, index = 0 }) {
           </span>
         </div>
 
-        {/* Riga 3: macchinario + note */}
         <div className="flex items-center gap-3 mt-1 flex-wrap">
           {record.macchinario && (
             <span
@@ -116,7 +118,6 @@ function ShiftCard({ record, onDelete, onEdit, index = 0 }) {
         </div>
       </div>
 
-      {/* Azioni: modifica + elimina */}
       <div className="flex flex-col gap-1 shrink-0">
         <motion.button
           whileTap={{ scale: 0.78, rotate: -6 }}
@@ -212,7 +213,6 @@ function FilterInput({ label, value, onChange, type = "date" }) {
   );
 }
 
-/* Dialog modifica turno — bottom sheet su mobile, modal centrato su desktop */
 function EditTurnoDialog({ record, onSuccess, onCancel }) {
   return (
     <AnimatePresence>
@@ -227,7 +227,6 @@ function EditTurnoDialog({ record, onSuccess, onCancel }) {
           style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}
           onClick={onCancel}
         >
-          {/* Card — slide-up mobile / pop-in desktop — mb-16 sopra bottom nav */}
           <motion.div
             key="edit-card"
             initial={{ opacity: 0, y: 80, rotateX: -6, scale: 0.96 }}
@@ -238,7 +237,6 @@ function EditTurnoDialog({ record, onSuccess, onCancel }) {
             className="w-full sm:max-w-md rounded-2xl flex flex-col mb-16 sm:mb-0 max-h-[85vh] overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header */}
             <div
               className="flex items-center justify-between px-5 py-4 border-b shrink-0"
               style={{ borderColor: "var(--border)" }}
@@ -265,7 +263,6 @@ function EditTurnoDialog({ record, onSuccess, onCancel }) {
                 ✕
               </motion.button>
             </div>
-            {/* Form scrollabile */}
             <div className="overflow-y-auto p-5">
               <FormModifica turno={record} onSuccess={onSuccess} />
             </div>
@@ -276,7 +273,6 @@ function EditTurnoDialog({ record, onSuccess, onCancel }) {
   );
 }
 
-/* Dialog di conferma eliminazione — modal centrato */
 function ConfirmDialog({ record, onConfirm, onCancel, loading = false }) {
   return (
     <AnimatePresence>
@@ -291,7 +287,6 @@ function ConfirmDialog({ record, onConfirm, onCancel, loading = false }) {
           style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}
           onClick={loading ? undefined : onCancel}
         >
-          {/* Card — pop-in 3D */}
           <motion.div
             key="confirm-card"
             initial={{ opacity: 0, scale: 0.82, y: 24, rotateX: 16 }}
@@ -302,7 +297,6 @@ function ConfirmDialog({ record, onConfirm, onCancel, loading = false }) {
             className="w-full sm:max-w-sm rounded-2xl p-6 mb-16 sm:mb-0 flex flex-col gap-4 mx-4"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Icona + titolo */}
             <div className="flex flex-col items-center gap-3 text-center">
               <motion.div
                 initial={{ scale: 0, rotate: -20 }}
@@ -345,17 +339,10 @@ function ConfirmDialog({ record, onConfirm, onCancel, loading = false }) {
                 >
                   {fmtData(record.data)}
                 </span>
-                ?<br />
-                <span
-                  className="text-xs"
-                  style={{ color: "var(--text-faint)" }}
-                >
-                  Verrà sincronizzato con Google Sheets.
-                </span>
+                ?
               </p>
             </div>
 
-            {/* Bottoni */}
             <div className="flex gap-3 mt-1">
               <motion.button
                 whileTap={{ scale: 0.95 }}
@@ -406,16 +393,20 @@ function ConfirmDialog({ record, onConfirm, onCancel, loading = false }) {
 
 export default function StoricoPage() {
   const { turni, rimuoviTurno, aggiornaTurno, cantieri, lavori } = useApp();
+
+  const [selectedMese, setSelectedMese] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  });
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [selectedCantiere, setSelectedCantiere] = useState("all");
   const [selectedLavoro, setSelectedLavoro] = useState("all");
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   const [confirmRecord, setConfirmRecord] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [editRecord, setEditRecord] = useState(null);
 
-  // Blocca/sblocca scroll body quando il dialog è aperto
   useEffect(() => {
     document.body.style.overflow = confirmRecord || editRecord ? "hidden" : "";
     return () => {
@@ -423,24 +414,32 @@ export default function StoricoPage() {
     };
   }, [confirmRecord, editRecord]);
 
+  // Mesi disponibili derivati dai dati + mese corrente
+  const now = new Date();
+  const currentYM = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const ymSet = new Set(turni.map((t) => t.data?.slice(0, 7)).filter(Boolean));
+  ymSet.add(currentYM);
+  const mesiOptions = Array.from(ymSet).sort().reverse();
+
   const hasFilters =
+    selectedMese !== "all" ||
     startDate ||
     endDate ||
     selectedCantiere !== "all" ||
     selectedLavoro !== "all";
+
   const activeCount = [
+    selectedMese !== "all",
     startDate,
     endDate,
     selectedCantiere !== "all",
     selectedLavoro !== "all",
   ].filter(Boolean).length;
 
-  // Apre il dialog di conferma passando il record completo
   function handleDelete(record) {
     setConfirmRecord(record);
   }
 
-  // Eseguito dopo conferma — il dialog rimane aperto con spinner finché l'operazione non è completata
   async function handleConfirmDelete() {
     const record = confirmRecord;
     setDeleting(true);
@@ -455,18 +454,17 @@ export default function StoricoPage() {
     }
   }
 
-  // Apre il dialog di modifica con il record selezionato
   function handleEdit(record) {
     setEditRecord(record);
   }
 
-  // Chiamato da FormModifica dopo salvataggio riuscito
   function handleEditSuccess(turnoAggiornato) {
     aggiornaTurno(turnoAggiornato);
     setEditRecord(null);
   }
 
   function reset() {
+    setSelectedMese("all");
     setStartDate("");
     setEndDate("");
     setSelectedCantiere("all");
@@ -476,6 +474,7 @@ export default function StoricoPage() {
   const filtered = useMemo(
     () =>
       turni.filter((t) => {
+        if (selectedMese !== "all" && !t.data?.startsWith(selectedMese)) return false;
         if (startDate && t.data < startDate) return false;
         if (endDate && t.data > endDate) return false;
         if (
@@ -487,7 +486,7 @@ export default function StoricoPage() {
           return false;
         return true;
       }),
-    [turni, startDate, endDate, selectedCantiere, selectedLavoro],
+    [turni, selectedMese, startDate, endDate, selectedCantiere, selectedLavoro],
   );
 
   const gruppi = useMemo(() => {
@@ -498,7 +497,6 @@ export default function StoricoPage() {
       map[t.data].records.push(t);
       map[t.data].totMin += calcMin(t.inizio, t.fine);
     });
-    // Turni di ogni giorno ordinati per orario (mattina → sera)
     return Object.values(map)
       .map((g) => ({
         ...g,
@@ -584,9 +582,24 @@ export default function StoricoPage() {
               style={{ overflow: "hidden" }}
             >
               <div
-                className="border-t px-4 pb-4 pt-3"
+                className="border-t px-4 pb-4 pt-3 flex flex-col gap-3"
                 style={{ borderColor: "var(--border)" }}
               >
+                {/* Select mese — riga intera */}
+                <FilterSelect
+                  label="Mese"
+                  value={selectedMese}
+                  onChange={setSelectedMese}
+                >
+                  <option value="all">Tutti i mesi</option>
+                  {mesiOptions.map((ym) => (
+                    <option key={ym} value={ym}>
+                      {fmtMese(ym)}
+                    </option>
+                  ))}
+                </FilterSelect>
+
+                {/* Griglia: Dal, Al, Cantiere, Tipo Lavoro */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   <FilterInput
                     label="Dal"
@@ -623,11 +636,12 @@ export default function StoricoPage() {
                     ))}
                   </FilterSelect>
                 </div>
+
                 {hasFilters && (
                   <motion.button
                     whileTap={{ scale: 0.94 }}
                     onClick={reset}
-                    className="mt-3 text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors"
+                    className="self-start text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors"
                     style={{
                       color: "var(--text-muted)",
                       borderColor: "var(--border)",
