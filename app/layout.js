@@ -19,13 +19,13 @@ export const viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
+  themeColor: "#b91c1c",
 };
 
 export const metadata = {
   title: "COOP134 — Gestione Turni",
   description: "Cooperativa Sociale — Gestione ore operai",
   manifest: "/manifest.webmanifest",
-  themeColor: "#b91c1c",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
