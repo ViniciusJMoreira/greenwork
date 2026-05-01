@@ -7,6 +7,12 @@ import {
 import { calcMin, fmtOre } from "@/lib/utils";
 
 const GIORNI = ["dom","lun","mar","mer","gio","ven","sab"];
+const MESI_IT = ["Gen","Feb","Mar","Apr","Mag","Giu","Lug","Ago","Set","Ott","Nov","Dic"];
+
+function fmtMese(ym) {
+  const [y, m] = ym.split("-");
+  return `${MESI_IT[parseInt(m) - 1]} ${y}`;
+}
 
 function formatHeader(dataStr) {
   const [y, m, d] = dataStr.split("-").map(Number);
@@ -137,25 +143,37 @@ function OperaioCard({ dipendente, turni, index = 0 }) {
 }
 
 export default function TabTurni({ turni: tuttiTurni, dipendenti, cantieri, lavori }) {
+  const [selectedMese,   setSelectedMese]   = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  });
   const [filterOperaio,  setFilterOperaio]  = useState("all");
   const [filterCantiere, setFilterCantiere] = useState("all");
   const [filterLavoro,   setFilterLavoro]   = useState("all");
   const [startDate,      setStartDate]      = useState("");
   const [endDate,        setEndDate]        = useState("");
-  const [filtersOpen,    setFiltersOpen]    = useState(true);
+  const [filtersOpen,    setFiltersOpen]    = useState(false);
   const [view,           setView]           = useState("operaio");
 
-  const inputCls = "rounded-lg px-3 py-2 text-sm outline-none border";
+  const inputCls   = "rounded-lg px-3 py-2 text-sm outline-none border cursor-pointer";
   const inputStyle = { background: "var(--bg-subtle)", borderColor: "var(--border)", color: "var(--text)" };
 
+  // Mesi disponibili derivati dai dati + mese corrente
+  const now = new Date();
+  const currentYM = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const ymSet = new Set(tuttiTurni.map((t) => t.data?.slice(0, 7)).filter(Boolean));
+  ymSet.add(currentYM);
+  const mesiOptions = Array.from(ymSet).sort().reverse();
+
   const filtered = useMemo(() => tuttiTurni.filter((t) => {
+    if (selectedMese !== "all" && !t.data?.startsWith(selectedMese)) return false;
     if (startDate && t.data < startDate) return false;
     if (endDate   && t.data > endDate)   return false;
     if (filterOperaio  !== "all" && String(t.dipendente_id) !== filterOperaio)  return false;
     if (filterCantiere !== "all" && String(t.cantiere_id)   !== filterCantiere) return false;
     if (filterLavoro   !== "all" && String(t.lavoro_id)     !== filterLavoro)   return false;
     return true;
-  }), [tuttiTurni, startDate, endDate, filterOperaio, filterCantiere, filterLavoro]);
+  }), [tuttiTurni, selectedMese, startDate, endDate, filterOperaio, filterCantiere, filterLavoro]);
 
   const gruppiOperaio = useMemo(() => {
     const map = {};
@@ -183,10 +201,11 @@ export default function TabTurni({ turni: tuttiTurni, dipendenti, cantieri, lavo
       .sort((a, b) => (a.data > b.data ? -1 : 1));
   }, [filtered]);
 
-  const hasFilters  = startDate || endDate || filterOperaio !== "all" || filterCantiere !== "all" || filterLavoro !== "all";
-  const activeCount = [startDate, endDate, filterOperaio !== "all", filterCantiere !== "all", filterLavoro !== "all"].filter(Boolean).length;
+  const hasFilters  = selectedMese !== "all" || startDate || endDate || filterOperaio !== "all" || filterCantiere !== "all" || filterLavoro !== "all";
+  const activeCount = [selectedMese !== "all", startDate, endDate, filterOperaio !== "all", filterCantiere !== "all", filterLavoro !== "all"].filter(Boolean).length;
 
   function resetFilters() {
+    setSelectedMese("all");
     setStartDate(""); setEndDate("");
     setFilterOperaio("all"); setFilterCantiere("all"); setFilterLavoro("all");
   }
@@ -226,7 +245,23 @@ export default function TabTurni({ turni: tuttiTurni, dipendenti, cantieri, lavo
               initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}
               transition={{ duration: 0.24, ease: [0.4, 0, 0.2, 1] }} style={{ overflow: "hidden" }}
             >
-              <div className="border-t px-4 pb-4 pt-3" style={{ borderColor: "var(--border)" }}>
+              <div className="border-t px-4 pb-4 pt-3 flex flex-col gap-3" style={{ borderColor: "var(--border)" }}>
+
+                {/* Select mese — riga intera */}
+                <div className="flex flex-col gap-1">
+                  <label className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>Mese</label>
+                  <select value={selectedMese} onChange={(e) => setSelectedMese(e.target.value)}
+                    className={inputCls} style={inputStyle}
+                    onFocus={(e) => (e.target.style.borderColor = "var(--primary)")}
+                    onBlur={(e)  => (e.target.style.borderColor = "var(--border)")}>
+                    <option value="all">Tutti i mesi</option>
+                    {mesiOptions.map((ym) => (
+                      <option key={ym} value={ym}>{fmtMese(ym)}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Griglia: Operaio, Cantiere, Tipo Lavoro, Dal, Al */}
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {[
                     { label: "Operaio",     value: filterOperaio,  set: setFilterOperaio,  options: dipendenti.map((d) => ({ value: String(d.id), label: `${d.nome} ${d.cognome}` })) },
@@ -249,15 +284,18 @@ export default function TabTurni({ turni: tuttiTurni, dipendenti, cantieri, lavo
                   ].map(({ label, value, set }) => (
                     <div key={label} className="flex flex-col gap-1">
                       <label className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>{label}</label>
-                      <input type="date" value={value} onChange={(e) => set(e.target.value)} className={inputCls + " appearance-none min-w-0"} style={inputStyle}
+                      <input type="date" value={value} onChange={(e) => set(e.target.value)}
+                        className="rounded-lg px-3 py-2 text-sm outline-none border appearance-none min-w-0"
+                        style={inputStyle}
                         onFocus={(e) => (e.target.style.borderColor = "var(--primary)")}
                         onBlur={(e)  => (e.target.style.borderColor = "var(--border)")} />
                     </div>
                   ))}
                 </div>
+
                 {hasFilters && (
                   <motion.button whileTap={{ scale: 0.94 }} onClick={resetFilters}
-                    className="mt-3 text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors"
+                    className="self-start text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors"
                     style={{ color: "var(--text-muted)", borderColor: "var(--border)" }}
                     onMouseEnter={(e) => { e.currentTarget.style.color = "var(--destructive)"; e.currentTarget.style.borderColor = "var(--destructive)"; }}
                     onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.borderColor = "var(--border)"; }}>
