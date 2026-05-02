@@ -1,9 +1,10 @@
 "use client";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
-  SlidersHorizontal, ChevronDown, ChevronUp, FileSearch, Wrench,
+  SlidersHorizontal, ChevronDown, ChevronUp, FileSearch, Wrench, Pencil,
 } from "lucide-react";
+import FormModifica from "@/components/form/form-modifica";
 import { calcMin, fmtOre } from "@/lib/utils";
 
 const GIORNI = ["dom","lun","mar","mer","gio","ven","sab"];
@@ -29,7 +30,7 @@ function OperaioPill({ nome }) {
   );
 }
 
-function TurnoCard({ record, showOperaio = false, index = 0 }) {
+function TurnoCard({ record, showOperaio = false, onEdit, index = 0 }) {
   const min = calcMin(record.inizio, record.fine);
   return (
     <motion.div
@@ -65,11 +66,33 @@ function TurnoCard({ record, showOperaio = false, index = 0 }) {
           </div>
         )}
       </div>
+
+      {/* Bottone modifica — visibile solo se onEdit è definito */}
+      {onEdit && (
+        <motion.button
+          whileTap={{ scale: 0.78, rotate: -6 }}
+          transition={{ duration: 0.1 }}
+          onClick={() => onEdit(record)}
+          className="p-1.5 rounded-lg transition-colors shrink-0"
+          style={{ color: "var(--text-muted)" }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = "var(--primary)";
+            e.currentTarget.style.background = "var(--primary-faint)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = "var(--text-muted)";
+            e.currentTarget.style.background = "transparent";
+          }}
+          title="Modifica turno"
+        >
+          <Pencil className="h-3.5 w-3.5" />
+        </motion.button>
+      )}
     </motion.div>
   );
 }
 
-function OperaioCard({ dipendente, turni, index = 0 }) {
+function OperaioCard({ dipendente, turni, onEdit, index = 0 }) {
   const [expanded, setExpanded] = useState(false);
   const min    = turni.reduce((a, t) => a + calcMin(t.inizio, t.fine), 0);
   const giorni = new Set(turni.map((t) => t.data)).size;
@@ -130,7 +153,7 @@ function OperaioCard({ dipendente, turni, index = 0 }) {
                     <span className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: "var(--primary)", color: "white" }}>{fmtOre(dayMin)}</span>
                   </div>
                   <div className="flex flex-col gap-2">
-                    {records.map((t, i) => <TurnoCard key={t.id} record={t} index={i} />)}
+                    {records.map((t, i) => <TurnoCard key={t.id} record={t} onEdit={onEdit} index={i} />)}
                   </div>
                 </div>
               ))}
@@ -142,7 +165,52 @@ function OperaioCard({ dipendente, turni, index = 0 }) {
   );
 }
 
-export default function TabTurni({ turni: tuttiTurni, dipendenti, cantieri, lavori }) {
+function EditTurnoDialog({ record, onSuccess, onCancel }) {
+  return (
+    <AnimatePresence>
+      {record && (
+        <motion.div
+          key="edit-backdrop"
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center"
+          style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}
+          onClick={onCancel}
+        >
+          <motion.div
+            key="edit-card"
+            initial={{ opacity: 0, y: 80, rotateX: -6, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, rotateX: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 80, rotateX: -6, scale: 0.96 }}
+            transition={{ type: "spring", damping: 26, stiffness: 300 }}
+            style={{ transformPerspective: 900, background: "var(--bg-card)" }}
+            className="w-full sm:max-w-md rounded-2xl flex flex-col mb-16 sm:mb-0 max-h-[85vh] overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between px-5 py-4 border-b shrink-0" style={{ borderColor: "var(--border)" }}>
+              <h2 className="text-base font-bold" style={{ color: "var(--text)" }}>Modifica turno</h2>
+              <motion.button
+                whileTap={{ scale: 0.82, rotate: 90 }} transition={{ duration: 0.15 }}
+                onClick={onCancel}
+                className="p-1.5 rounded-lg transition-colors"
+                style={{ color: "var(--text-muted)" }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-subtle)")}
+                onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+              >
+                ✕
+              </motion.button>
+            </div>
+            <div className="overflow-y-auto p-5">
+              <FormModifica turno={record} onSuccess={onSuccess} />
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+export default function TabTurni({ turni: tuttiTurni, dipendenti, cantieri, lavori, onAggiornaTurno }) {
   const [selectedMese,   setSelectedMese]   = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
@@ -154,6 +222,17 @@ export default function TabTurni({ turni: tuttiTurni, dipendenti, cantieri, lavo
   const [endDate,        setEndDate]        = useState("");
   const [filtersOpen,    setFiltersOpen]    = useState(false);
   const [view,           setView]           = useState("operaio");
+  const [editRecord,     setEditRecord]     = useState(null);
+
+  useEffect(() => {
+    document.body.style.overflow = editRecord ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [editRecord]);
+
+  function handleEditSuccess(turnoAggiornato) {
+    onAggiornaTurno?.(turnoAggiornato);
+    setEditRecord(null);
+  }
 
   const inputCls   = "rounded-lg px-3 py-2 text-sm outline-none border cursor-pointer";
   const inputStyle = { background: "var(--bg-subtle)", borderColor: "var(--border)", color: "var(--text)" };
@@ -246,8 +325,6 @@ export default function TabTurni({ turni: tuttiTurni, dipendenti, cantieri, lavo
               transition={{ duration: 0.24, ease: [0.4, 0, 0.2, 1] }} style={{ overflow: "hidden" }}
             >
               <div className="border-t px-4 pb-4 pt-3 flex flex-col gap-3" style={{ borderColor: "var(--border)" }}>
-
-                {/* Select mese — riga intera */}
                 <div className="flex flex-col gap-1">
                   <label className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>Mese</label>
                   <select value={selectedMese} onChange={(e) => setSelectedMese(e.target.value)}
@@ -261,7 +338,6 @@ export default function TabTurni({ turni: tuttiTurni, dipendenti, cantieri, lavo
                   </select>
                 </div>
 
-                {/* Griglia: Operaio, Cantiere, Tipo Lavoro, Dal, Al */}
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {[
                     { label: "Operaio",     value: filterOperaio,  set: setFilterOperaio,  options: dipendenti.map((d) => ({ value: String(d.id), label: `${d.nome} ${d.cognome}` })) },
@@ -334,7 +410,9 @@ export default function TabTurni({ turni: tuttiTurni, dipendenti, cantieri, lavo
           </motion.div>
         ) : view === "operaio" ? (
           <motion.div key="by-operaio" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }} className="flex flex-col gap-3">
-            {gruppiOperaio.map(({ dipendente, turni }, i) => <OperaioCard key={dipendente.id} dipendente={dipendente} turni={turni} index={i} />)}
+            {gruppiOperaio.map(({ dipendente, turni }, i) => (
+              <OperaioCard key={dipendente.id} dipendente={dipendente} turni={turni} onEdit={setEditRecord} index={i} />
+            ))}
           </motion.div>
         ) : (
           <motion.div key="by-data" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }} className="flex flex-col gap-6">
@@ -346,13 +424,20 @@ export default function TabTurni({ turni: tuttiTurni, dipendenti, cantieri, lavo
                   <span className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: "var(--primary)", color: "white" }}>{fmtOre(totMin)}</span>
                 </div>
                 <div className="flex flex-col gap-2">
-                  {records.map((r, i) => <TurnoCard key={r.id} record={r} showOperaio index={i} />)}
+                  {records.map((r, i) => <TurnoCard key={r.id} record={r} showOperaio onEdit={setEditRecord} index={i} />)}
                 </div>
               </div>
             ))}
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Dialog modifica turno */}
+      <EditTurnoDialog
+        record={editRecord}
+        onSuccess={handleEditSuccess}
+        onCancel={() => setEditRecord(null)}
+      />
     </div>
   );
 }

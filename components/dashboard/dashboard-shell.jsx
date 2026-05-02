@@ -29,10 +29,15 @@ const TABS = [
   { id: "export",      label: "Export",       icon: FileDown     },
 ];
 
-export default function DashboardShell({ turni, dipendenti, cantieri, lavori, macchinari }) {
+export default function DashboardShell({ turni: turniIniziali, dipendenti, cantieri, lavori, macchinari }) {
   const [activeTab, setActiveTab] = useState("riepilogo");
+  const [turni, setTurni] = useState(turniIniziali);
 
-  const tabProps = { turni, dipendenti, cantieri, lavori, macchinari };
+  function aggiornaTurno(turnoAggiornato) {
+    setTurni((prev) => prev.map((t) => (t.id === turnoAggiornato.id ? turnoAggiornato : t)));
+  }
+
+  const tabProps = { turni, dipendenti, cantieri, lavori, macchinari, onAggiornaTurno: aggiornaTurno };
 
   return (
     <div className="flex gap-6 min-h-screen">

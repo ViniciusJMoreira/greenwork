@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Users,
@@ -13,7 +13,6 @@ import {
 } from "lucide-react";
 import {
   getStats,
-  getOrePerGiorno,
   getPieData,
   getOreLavori,
   getAndamentoMulti,
@@ -34,7 +33,21 @@ import {
   Area,
 } from "recharts";
 
-const MESI = [
+const MESI_IT = [
+  "Gen",
+  "Feb",
+  "Mar",
+  "Apr",
+  "Mag",
+  "Giu",
+  "Lug",
+  "Ago",
+  "Set",
+  "Ott",
+  "Nov",
+  "Dic",
+];
+const MESI_FULL = [
   "Gennaio",
   "Febbraio",
   "Marzo",
@@ -48,6 +61,11 @@ const MESI = [
   "Novembre",
   "Dicembre",
 ];
+
+function fmtMese(ym) {
+  const [y, m] = ym.split("-");
+  return `${MESI_IT[parseInt(m) - 1]} ${y}`;
+}
 
 const SFALCIO_LAVORI = [
   "Sfalcio CP",
@@ -150,7 +168,6 @@ function ChartTooltip({ active, payload, label }) {
   );
 }
 
-// Carosello riutilizzabile: pagina 0 = lista barre, pagina 1 = pie chart
 function OreCarousel({ title, icon: Icon, data, colorFn, delay = 0.38 }) {
   const [page, setPage] = useState(0);
   const [dir, setDir] = useState(1);
@@ -171,7 +188,6 @@ function OreCarousel({ title, icon: Icon, data, colorFn, delay = 0.38 }) {
       className="rounded-xl border overflow-hidden"
       style={{ background: "var(--bg-card)", borderColor: "var(--border)" }}
     >
-      {/* Header */}
       <div
         className="px-5 py-3.5 border-b flex items-center justify-between"
         style={{ borderColor: "var(--border)" }}
@@ -221,7 +237,6 @@ function OreCarousel({ title, icon: Icon, data, colorFn, delay = 0.38 }) {
         </div>
       </div>
 
-      {/* Contenuto */}
       <div className="overflow-hidden relative" style={{ minHeight: 220 }}>
         {data.length === 0 ? (
           <p
@@ -232,7 +247,6 @@ function OreCarousel({ title, icon: Icon, data, colorFn, delay = 0.38 }) {
           </p>
         ) : (
           <AnimatePresence mode="wait" custom={dir}>
-            {/* Pagina 0 — Lista barre */}
             {page === 0 && (
               <motion.div
                 key="list"
@@ -250,7 +264,6 @@ function OreCarousel({ title, icon: Icon, data, colorFn, delay = 0.38 }) {
                 }}
                 className="px-5 pt-4 pb-2"
               >
-                {/* onPointerDown stopPropagation impedisce al drag di catturare lo scroll verticale su mobile */}
                 <div
                   className="flex flex-col gap-2.5 overflow-y-auto pr-1"
                   style={{ maxHeight: 210 }}
@@ -299,7 +312,6 @@ function OreCarousel({ title, icon: Icon, data, colorFn, delay = 0.38 }) {
               </motion.div>
             )}
 
-            {/* Pagina 1 — PieChart */}
             {page === 1 && (
               <motion.div
                 key="pie"
@@ -385,62 +397,83 @@ function OreCarousel({ title, icon: Icon, data, colorFn, delay = 0.38 }) {
 }
 
 export default function TabRiepilogo({ turni: tuttiTurni, dipendenti }) {
-  const today = new Date();
-  const meseStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
   const tickStyle = { fontSize: 11, fill: "var(--text-muted)" };
 
-  const turniMese = useMemo(
-    () => tuttiTurni.filter((t) => t.data?.startsWith(meseStr)),
-    [tuttiTurni, meseStr],
-  );
+  const [selectedMese, setSelectedMese] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  });
 
-  const stats = useMemo(() => getStats(turniMese), [turniMese]);
-  const operaiAttivi = useMemo(
-    () => new Set(turniMese.map((t) => t.dipendente_id)).size,
-    [turniMese],
+  // Mesi disponibili derivati dai dati + mese corrente
+  const now = new Date();
+  const currentYM = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const ymSet = new Set(
+    tuttiTurni.map((t) => t.data?.slice(0, 7)).filter(Boolean),
   );
+  ymSet.add(currentYM);
+  const mesiOptions = Array.from(ymSet).sort().reverse();
 
-  const orePerOperaio = useMemo(() => {
-    const map = {};
-    turniMese.forEach((t) => {
-      const k = t.nome_operaio || "—";
-      map[k] = (map[k] || 0) + calcMin(t.inizio, t.fine) / 60;
-    });
-    return Object.entries(map)
-      .map(([nome, ore]) => ({
-        nome: nome.split(" ")[0],
-        ore: parseFloat(ore.toFixed(1)),
-      }))
-      .sort((a, b) => b.ore - a.ore);
-  }, [turniMese]);
+  // Nome del mese selezionato per i titoli
+  const [meseYear, meseMon] = selectedMese.split("-");
+  const meseNome = MESI_FULL[parseInt(meseMon) - 1];
 
-  const allCantieri = useMemo(() => getPieData(turniMese), [turniMese]);
-  const oreSfalcio = useMemo(
-    () => getOreLavori(turniMese, SFALCIO_LAVORI),
-    [turniMese],
-  );
-  const oreCustodia = useMemo(
-    () => getOreLavori(turniMese, CUSTODIA_LAVORI),
-    [turniMese],
-  );
-  const orePerGiorno = useMemo(
-    () => getAndamentoMulti(turniMese, [
-      { key: "oreSfalcio",  nomi: SFALCIO_LAVORI  },
-      { key: "oreCustodia", nomi: CUSTODIA_LAVORI },
-    ], 14),
-    [turniMese],
+  const turniMese = tuttiTurni.filter((t) => t.data?.startsWith(selectedMese));
+
+  const stats = getStats(turniMese);
+  const operaiAttivi = new Set(turniMese.map((t) => t.dipendente_id)).size;
+
+  const map = {};
+  turniMese.forEach((t) => {
+    const k = t.nome_operaio || "—";
+    map[k] = (map[k] || 0) + calcMin(t.inizio, t.fine) / 60;
+  });
+  const orePerOperaio = Object.entries(map)
+    .map(([nome, ore]) => ({ nome: nome.split(" ")[0], ore: parseFloat(ore.toFixed(1)) }))
+    .sort((a, b) => b.ore - a.ore);
+
+  const allCantieri = getPieData(turniMese);
+  const oreSfalcio = getOreLavori(turniMese, SFALCIO_LAVORI);
+  const oreCustodia = getOreLavori(turniMese, CUSTODIA_LAVORI);
+  const orePerGiorno = getAndamentoMulti(
+    turniMese,
+    [{ key: "oreSfalcio", nomi: SFALCIO_LAVORI }, { key: "oreCustodia", nomi: CUSTODIA_LAVORI }],
+    14,
   );
 
   return (
     <div className="flex flex-col gap-5">
-      <div>
-        <h2 className="text-lg font-bold" style={{ color: "var(--text)" }}>
-          Riepilogo
-        </h2>
-        <p className="text-sm mt-0.5" style={{ color: "var(--text-muted)" }}>
-          {MESI[today.getMonth()]} {today.getFullYear()} — {tuttiTurni.length}{" "}
-          turni totali
-        </p>
+      {/* Header + select mese */}
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div>
+          <h2 className="text-lg font-bold" style={{ color: "var(--text)" }}>
+            Riepilogo
+          </h2>
+          <p className="text-sm mt-0.5" style={{ color: "var(--text-muted)" }}>
+            {tuttiTurni.length} turni totali
+          </p>
+        </div>
+
+        {/* Select mese */}
+        <div className="flex flex-col gap-1 min-w-[160px]">
+          <select
+            value={selectedMese}
+            onChange={(e) => setSelectedMese(e.target.value)}
+            className="rounded-lg px-3 py-2 text-sm outline-none border transition-colors cursor-pointer"
+            style={{
+              background: "var(--bg-card)",
+              borderColor: "var(--border)",
+              color: "var(--text)",
+            }}
+            onFocus={(e) => (e.target.style.borderColor = "var(--primary)")}
+            onBlur={(e) => (e.target.style.borderColor = "var(--border)")}
+          >
+            {mesiOptions.map((ym) => (
+              <option key={ym} value={ym}>
+                {fmtMese(ym)}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {/* KPI */}
@@ -578,7 +611,7 @@ export default function TabRiepilogo({ turni: tuttiTurni, dipendenti }) {
               className="text-sm font-semibold"
               style={{ color: "var(--text)" }}
             >
-              Andamento Ore Campo Sportivo — {MESI[today.getMonth()]}
+              Andamento Ore Campo Sportivo — {meseNome} {meseYear}
             </span>
           </div>
           <div className="px-5 py-4">
@@ -597,14 +630,34 @@ export default function TabRiepilogo({ turni: tuttiTurni, dipendenti }) {
                 >
                   <defs>
                     <linearGradient id="teamGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.25} />
-                      <stop offset="100%" stopColor="var(--primary)" stopOpacity={0} />
+                      <stop
+                        offset="0%"
+                        stopColor="var(--primary)"
+                        stopOpacity={0.25}
+                      />
+                      <stop
+                        offset="100%"
+                        stopColor="var(--primary)"
+                        stopOpacity={0}
+                      />
                     </linearGradient>
-                    <linearGradient id="sfalcioGrad" x1="0" y1="0" x2="0" y2="1">
+                    <linearGradient
+                      id="sfalcioGrad"
+                      x1="0"
+                      y1="0"
+                      x2="0"
+                      y2="1"
+                    >
                       <stop offset="0%" stopColor="#16a34a" stopOpacity={0.2} />
                       <stop offset="100%" stopColor="#16a34a" stopOpacity={0} />
                     </linearGradient>
-                    <linearGradient id="custodiaGrad" x1="0" y1="0" x2="0" y2="1">
+                    <linearGradient
+                      id="custodiaGrad"
+                      x1="0"
+                      y1="0"
+                      x2="0"
+                      y2="1"
+                    >
                       <stop offset="0%" stopColor="#1d4ed8" stopOpacity={0.2} />
                       <stop offset="100%" stopColor="#1d4ed8" stopOpacity={0} />
                     </linearGradient>
@@ -627,15 +680,35 @@ export default function TabRiepilogo({ turni: tuttiTurni, dipendenti }) {
                     width={28}
                   />
                   <Tooltip content={<ChartTooltip />} />
-                  <Area type="monotone" dataKey="oreSfalcio" name="Sfalcio"
-                    stroke="#16a34a" strokeWidth={1.5} fill="url(#sfalcioGrad)"
+                  <Area
+                    type="monotone"
+                    dataKey="oreSfalcio"
+                    name="Sfalcio"
+                    stroke="#16a34a"
+                    strokeWidth={1.5}
+                    fill="url(#sfalcioGrad)"
                     dot={{ r: 2, fill: "#16a34a", strokeWidth: 0 }}
-                    activeDot={{ r: 4, fill: "#16a34a", strokeWidth: 2, stroke: "var(--bg-card)" }}
+                    activeDot={{
+                      r: 4,
+                      fill: "#16a34a",
+                      strokeWidth: 2,
+                      stroke: "var(--bg-card)",
+                    }}
                   />
-                  <Area type="monotone" dataKey="oreCustodia" name="Custodia"
-                    stroke="#1d4ed8" strokeWidth={1.5} fill="url(#custodiaGrad)"
+                  <Area
+                    type="monotone"
+                    dataKey="oreCustodia"
+                    name="Custodia"
+                    stroke="#1d4ed8"
+                    strokeWidth={1.5}
+                    fill="url(#custodiaGrad)"
                     dot={{ r: 2, fill: "#1d4ed8", strokeWidth: 0 }}
-                    activeDot={{ r: 4, fill: "#1d4ed8", strokeWidth: 2, stroke: "var(--bg-card)" }}
+                    activeDot={{
+                      r: 4,
+                      fill: "#1d4ed8",
+                      strokeWidth: 2,
+                      stroke: "var(--bg-card)",
+                    }}
                   />
                   <Area
                     type="monotone"
