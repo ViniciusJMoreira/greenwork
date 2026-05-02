@@ -38,78 +38,80 @@ function TurnoCard({ record, showOperaio = false, onEdit, onDelete, index = 0 })
     <motion.div
       initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.18, delay: index * 0.035 }}
-      className="rounded-xl border px-4 py-3 flex items-start gap-3"
+      className="rounded-xl border overflow-hidden"
       style={{ background: "var(--bg-card)", borderColor: "var(--border)" }}
     >
-      <div className="w-0.5 self-stretch rounded-full shrink-0 mt-0.5" style={{ background: "var(--primary)" }} />
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-sm font-semibold truncate" style={{ color: "var(--text)" }}>{record.cantiere}</span>
+      <div className="px-4 pt-4 pb-3 flex flex-col gap-3">
+
+        {/* Riga 1: cantiere + lavoro pill */}
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold leading-snug" style={{ color: "var(--text)" }}>{record.cantiere}</p>
+            {showOperaio && record.nome_operaio && (
+              <div className="mt-1"><OperaioPill nome={record.nome_operaio} /></div>
+            )}
+          </div>
           {record.lavoro && (
-            <span className="inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-full border"
-              style={{ color: "var(--primary)", background: "var(--primary-faint)", borderColor: "var(--primary)" + "33" }}>
+            <span className="inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-full border shrink-0"
+              style={{ color: "var(--primary)", background: "var(--primary-faint)", borderColor: "var(--primary)33" }}>
               {record.lavoro}
             </span>
           )}
         </div>
-        <div className="flex items-center gap-3 mt-1 flex-wrap">
-          <span className="text-xs font-mono tabular-nums" style={{ color: "var(--text-muted)" }}>{record.inizio} → {record.fine}</span>
-          <span className="text-xs font-bold" style={{ color: "var(--primary)" }}>{fmtOre(min)}</span>
-          {showOperaio && record.nome_operaio && <OperaioPill nome={record.nome_operaio} />}
-        </div>
-        {(record.macchinario || record.note) && (
-          <div className="flex items-center gap-3 mt-1 flex-wrap">
-            {record.macchinario && (
-              <span className="flex items-center gap-1 text-xs" style={{ color: "var(--text-faint)" }}>
-                <Wrench className="h-3 w-3" /> {record.macchinario}
-              </span>
-            )}
-            {record.note && <span className="text-xs italic truncate" style={{ color: "var(--text-faint)" }}>{record.note}</span>}
+
+        {/* Riga 2: timeline con ore al centro */}
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-mono font-semibold tabular-nums" style={{ color: "var(--text)" }}>{record.inizio}</span>
+          <div className="flex-1 flex items-center gap-1">
+            <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "var(--primary)" }} />
+            <div className="flex-1 h-px" style={{ background: "var(--border)" }} />
+            <span className="text-xs font-bold px-2 shrink-0" style={{ color: "var(--primary)" }}>{fmtOre(min)}</span>
+            <div className="flex-1 h-px" style={{ background: "var(--border)" }} />
+            <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "var(--primary)" }} />
           </div>
+          <span className="text-xs font-mono font-semibold tabular-nums" style={{ color: "var(--text)" }}>{record.fine}</span>
+        </div>
+
+        {/* Riga 3: mezzo */}
+        {record.mezzo && (
+          <span className="flex items-center gap-1 text-xs" style={{ color: "var(--text-faint)" }}>
+            <Wrench className="h-3 w-3 shrink-0" />{record.mezzo}
+          </span>
         )}
       </div>
 
-      {/* Azioni — visibili solo se i callback sono definiti */}
+      {/* Note */}
+      {record.note && (
+        <div className="px-4 pb-3">
+          <div className="rounded-lg px-3 py-2.5 flex flex-col gap-1"
+            style={{ background: "var(--bg-subtle)" }}>
+            <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--text-faint)" }}>Note</span>
+            <p className="text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>{record.note}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Azioni */}
       {(onEdit || onDelete) && (
-        <div className="flex items-center gap-1 shrink-0">
+        <div className="flex items-center justify-end gap-1.5 px-4 pb-3">
           {onEdit && (
-            <motion.button
-              whileTap={{ scale: 0.78, rotate: -6 }}
-              transition={{ duration: 0.1 }}
+            <motion.button whileTap={{ scale: 0.93 }} transition={{ duration: 0.1 }}
               onClick={() => onEdit(record)}
-              className="p-1.5 rounded-lg transition-colors"
-              style={{ color: "var(--text-muted)" }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = "var(--primary)";
-                e.currentTarget.style.background = "var(--primary-faint)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = "var(--text-muted)";
-                e.currentTarget.style.background = "transparent";
-              }}
-              title="Modifica turno"
-            >
-              <Pencil className="h-3.5 w-3.5" />
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors"
+              style={{ color: "var(--text-muted)", borderColor: "var(--border)" }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = "var(--primary)"; e.currentTarget.style.borderColor = "var(--primary)"; e.currentTarget.style.background = "var(--primary-faint)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.background = "transparent"; }}>
+              <Pencil className="h-3 w-3" /> Modifica
             </motion.button>
           )}
           {onDelete && (
-            <motion.button
-              whileTap={{ scale: 0.78, rotate: 6 }}
-              transition={{ duration: 0.1 }}
+            <motion.button whileTap={{ scale: 0.93 }} transition={{ duration: 0.1 }}
               onClick={() => onDelete(record)}
-              className="p-1.5 rounded-lg transition-colors"
-              style={{ color: "var(--text-muted)" }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = "var(--destructive)";
-                e.currentTarget.style.background = "rgba(220,38,38,0.1)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = "var(--text-muted)";
-                e.currentTarget.style.background = "transparent";
-              }}
-              title="Elimina turno"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors"
+              style={{ color: "var(--text-muted)", borderColor: "var(--border)" }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = "var(--destructive)"; e.currentTarget.style.borderColor = "var(--destructive)"; e.currentTarget.style.background = "rgba(220,38,38,0.08)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.background = "transparent"; }}>
+              <Trash2 className="h-3 w-3" /> Elimina
             </motion.button>
           )}
         </div>
@@ -200,7 +202,7 @@ function EditTurnoDialog({ record, onSuccess, onCancel }) {
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
           className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center"
-          style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}
+          style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", paddingBottom: "calc(max(16px, env(safe-area-inset-bottom)) + 68px)" }}
           onClick={onCancel}
         >
           <motion.div
@@ -210,7 +212,7 @@ function EditTurnoDialog({ record, onSuccess, onCancel }) {
             exit={{ opacity: 0, y: 80, rotateX: -6, scale: 0.96 }}
             transition={{ type: "spring", damping: 26, stiffness: 300 }}
             style={{ transformPerspective: 900, background: "var(--bg-card)" }}
-            className="w-full sm:max-w-md rounded-2xl flex flex-col mb-16 sm:mb-0 max-h-[85vh] overflow-hidden"
+            className="w-full sm:max-w-md rounded-2xl flex flex-col max-h-[85vh] overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-5 py-4 border-b shrink-0" style={{ borderColor: "var(--border)" }}>
@@ -244,8 +246,8 @@ function DeleteConfirmDialog({ record, onConfirm, onCancel, loading }) {
           key="delete-backdrop"
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
-          className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center"
-          style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}
+          className="fixed inset-0 z-[9999] flex items-center justify-center"
+          style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", padding: "16px" }}
           onClick={onCancel}
         >
           <motion.div
@@ -255,7 +257,7 @@ function DeleteConfirmDialog({ record, onConfirm, onCancel, loading }) {
             exit={{ opacity: 0, y: 80, scale: 0.96 }}
             transition={{ type: "spring", damping: 26, stiffness: 300 }}
             style={{ background: "var(--bg-card)" }}
-            className="w-full sm:max-w-sm rounded-2xl flex flex-col mb-16 sm:mb-0 overflow-hidden"
+            className="w-full sm:max-w-sm rounded-2xl flex flex-col overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="px-5 pt-5 pb-4 flex flex-col gap-1">

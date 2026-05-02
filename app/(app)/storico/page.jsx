@@ -224,7 +224,7 @@ function EditTurnoDialog({ record, onSuccess, onCancel }) {
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
           className="fixed inset-0 z-60 flex items-end sm:items-center justify-center"
-          style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}
+          style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", paddingBottom: "calc(max(16px, env(safe-area-inset-bottom)) + 68px)" }}
           onClick={onCancel}
         >
           <motion.div
@@ -234,7 +234,7 @@ function EditTurnoDialog({ record, onSuccess, onCancel }) {
             exit={{ opacity: 0, y: 80, rotateX: -6, scale: 0.96 }}
             transition={{ type: "spring", damping: 26, stiffness: 300 }}
             style={{ transformPerspective: 900, background: "var(--bg-card)" }}
-            className="w-full sm:max-w-md rounded-2xl flex flex-col mb-16 sm:mb-0 max-h-[85vh] overflow-hidden"
+            className="w-full sm:max-w-md rounded-2xl flex flex-col max-h-[85vh] overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             <div
