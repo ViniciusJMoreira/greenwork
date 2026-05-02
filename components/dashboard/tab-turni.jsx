@@ -2,9 +2,11 @@
 import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
-  SlidersHorizontal, ChevronDown, ChevronUp, FileSearch, Wrench, Pencil,
+  SlidersHorizontal, ChevronDown, ChevronUp, FileSearch, Wrench, Pencil, Trash2,
 } from "lucide-react";
+import toast from "react-hot-toast";
 import FormModifica from "@/components/form/form-modifica";
+import { deleteTurno } from "@/lib/actions";
 import { calcMin, fmtOre } from "@/lib/utils";
 
 const GIORNI = ["dom","lun","mar","mer","gio","ven","sab"];
@@ -30,7 +32,7 @@ function OperaioPill({ nome }) {
   );
 }
 
-function TurnoCard({ record, showOperaio = false, onEdit, index = 0 }) {
+function TurnoCard({ record, showOperaio = false, onEdit, onDelete, index = 0 }) {
   const min = calcMin(record.inizio, record.fine);
   return (
     <motion.div
@@ -67,32 +69,56 @@ function TurnoCard({ record, showOperaio = false, onEdit, index = 0 }) {
         )}
       </div>
 
-      {/* Bottone modifica — visibile solo se onEdit è definito */}
-      {onEdit && (
-        <motion.button
-          whileTap={{ scale: 0.78, rotate: -6 }}
-          transition={{ duration: 0.1 }}
-          onClick={() => onEdit(record)}
-          className="p-1.5 rounded-lg transition-colors shrink-0"
-          style={{ color: "var(--text-muted)" }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.color = "var(--primary)";
-            e.currentTarget.style.background = "var(--primary-faint)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.color = "var(--text-muted)";
-            e.currentTarget.style.background = "transparent";
-          }}
-          title="Modifica turno"
-        >
-          <Pencil className="h-3.5 w-3.5" />
-        </motion.button>
+      {/* Azioni — visibili solo se i callback sono definiti */}
+      {(onEdit || onDelete) && (
+        <div className="flex items-center gap-1 shrink-0">
+          {onEdit && (
+            <motion.button
+              whileTap={{ scale: 0.78, rotate: -6 }}
+              transition={{ duration: 0.1 }}
+              onClick={() => onEdit(record)}
+              className="p-1.5 rounded-lg transition-colors"
+              style={{ color: "var(--text-muted)" }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = "var(--primary)";
+                e.currentTarget.style.background = "var(--primary-faint)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = "var(--text-muted)";
+                e.currentTarget.style.background = "transparent";
+              }}
+              title="Modifica turno"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+            </motion.button>
+          )}
+          {onDelete && (
+            <motion.button
+              whileTap={{ scale: 0.78, rotate: 6 }}
+              transition={{ duration: 0.1 }}
+              onClick={() => onDelete(record)}
+              className="p-1.5 rounded-lg transition-colors"
+              style={{ color: "var(--text-muted)" }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = "var(--destructive)";
+                e.currentTarget.style.background = "rgba(220,38,38,0.1)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = "var(--text-muted)";
+                e.currentTarget.style.background = "transparent";
+              }}
+              title="Elimina turno"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </motion.button>
+          )}
+        </div>
       )}
     </motion.div>
   );
 }
 
-function OperaioCard({ dipendente, turni, onEdit, index = 0 }) {
+function OperaioCard({ dipendente, turni, onEdit, onDelete, index = 0 }) {
   const [expanded, setExpanded] = useState(false);
   const min    = turni.reduce((a, t) => a + calcMin(t.inizio, t.fine), 0);
   const giorni = new Set(turni.map((t) => t.data)).size;
@@ -153,7 +179,7 @@ function OperaioCard({ dipendente, turni, onEdit, index = 0 }) {
                     <span className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: "var(--primary)", color: "white" }}>{fmtOre(dayMin)}</span>
                   </div>
                   <div className="flex flex-col gap-2">
-                    {records.map((t, i) => <TurnoCard key={t.id} record={t} onEdit={onEdit} index={i} />)}
+                    {records.map((t, i) => <TurnoCard key={t.id} record={t} onEdit={onEdit} onDelete={onDelete} index={i} />)}
                   </div>
                 </div>
               ))}
@@ -210,7 +236,62 @@ function EditTurnoDialog({ record, onSuccess, onCancel }) {
   );
 }
 
-export default function TabTurni({ turni: tuttiTurni, dipendenti, cantieri, lavori, onAggiornaTurno }) {
+function DeleteConfirmDialog({ record, onConfirm, onCancel, loading }) {
+  return (
+    <AnimatePresence>
+      {record && (
+        <motion.div
+          key="delete-backdrop"
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center"
+          style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}
+          onClick={onCancel}
+        >
+          <motion.div
+            key="delete-card"
+            initial={{ opacity: 0, y: 80, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 80, scale: 0.96 }}
+            transition={{ type: "spring", damping: 26, stiffness: 300 }}
+            style={{ background: "var(--bg-card)" }}
+            className="w-full sm:max-w-sm rounded-2xl flex flex-col mb-16 sm:mb-0 overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-5 pt-5 pb-4 flex flex-col gap-1">
+              <div className="flex items-center gap-2 mb-2">
+                <Trash2 className="h-5 w-5" style={{ color: "var(--destructive)" }} />
+                <h2 className="text-base font-bold" style={{ color: "var(--text)" }}>Elimina turno</h2>
+              </div>
+              <p className="text-sm" style={{ color: "var(--text-muted)" }}>
+                Stai per eliminare il turno del{" "}
+                <strong style={{ color: "var(--text)" }}>{record.data}</strong> —{" "}
+                <strong style={{ color: "var(--text)" }}>{record.cantiere}</strong>.
+              </p>
+              <p className="text-xs mt-1" style={{ color: "var(--text-faint)" }}>Questa azione non può essere annullata.</p>
+            </div>
+            <div className="flex gap-3 px-5 pb-5">
+              <motion.button
+                whileTap={{ scale: 0.95 }} onClick={onCancel}
+                className="flex-1 py-2.5 rounded-xl text-sm font-medium border transition-colors"
+                style={{ color: "var(--text-muted)", borderColor: "var(--border)" }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-subtle)")}
+                onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+              >Annulla</motion.button>
+              <motion.button
+                whileTap={{ scale: 0.95 }} onClick={onConfirm} disabled={loading}
+                className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-opacity"
+                style={{ background: "var(--destructive)", color: "white", opacity: loading ? 0.6 : 1 }}
+              >{loading ? "Eliminando…" : "Elimina"}</motion.button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
+export default function TabTurni({ turni: tuttiTurni, dipendenti, cantieri, lavori, onAggiornaTurno, onRimuoviTurno }) {
   const [selectedMese,   setSelectedMese]   = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
@@ -222,16 +303,32 @@ export default function TabTurni({ turni: tuttiTurni, dipendenti, cantieri, lavo
   const [endDate,        setEndDate]        = useState("");
   const [filtersOpen,    setFiltersOpen]    = useState(false);
   const [view,           setView]           = useState("operaio");
-  const [editRecord,     setEditRecord]     = useState(null);
+  const [editRecord,   setEditRecord]   = useState(null);
+  const [deleteRecord, setDeleteRecord] = useState(null);
+  const [deleting,     setDeleting]     = useState(false);
 
   useEffect(() => {
-    document.body.style.overflow = editRecord ? "hidden" : "";
+    document.body.style.overflow = (editRecord || deleteRecord) ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
-  }, [editRecord]);
+  }, [editRecord, deleteRecord]);
 
   function handleEditSuccess(turnoAggiornato) {
     onAggiornaTurno?.(turnoAggiornato);
     setEditRecord(null);
+  }
+
+  async function handleDeleteConfirm() {
+    if (!deleteRecord) return;
+    setDeleting(true);
+    const result = await deleteTurno(deleteRecord.id);
+    setDeleting(false);
+    if (result.success) {
+      onRimuoviTurno?.(deleteRecord.id);
+      setDeleteRecord(null);
+      toast.success("Turno eliminato");
+    } else {
+      toast.error("Errore durante l'eliminazione");
+    }
   }
 
   const inputCls   = "rounded-lg px-3 py-2 text-sm outline-none border cursor-pointer";
@@ -411,7 +508,7 @@ export default function TabTurni({ turni: tuttiTurni, dipendenti, cantieri, lavo
         ) : view === "operaio" ? (
           <motion.div key="by-operaio" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }} className="flex flex-col gap-3">
             {gruppiOperaio.map(({ dipendente, turni }, i) => (
-              <OperaioCard key={dipendente.id} dipendente={dipendente} turni={turni} onEdit={setEditRecord} index={i} />
+              <OperaioCard key={dipendente.id} dipendente={dipendente} turni={turni} onEdit={setEditRecord} onDelete={setDeleteRecord} index={i} />
             ))}
           </motion.div>
         ) : (
@@ -424,7 +521,7 @@ export default function TabTurni({ turni: tuttiTurni, dipendenti, cantieri, lavo
                   <span className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: "var(--primary)", color: "white" }}>{fmtOre(totMin)}</span>
                 </div>
                 <div className="flex flex-col gap-2">
-                  {records.map((r, i) => <TurnoCard key={r.id} record={r} showOperaio onEdit={setEditRecord} index={i} />)}
+                  {records.map((r, i) => <TurnoCard key={r.id} record={r} showOperaio onEdit={setEditRecord} onDelete={setDeleteRecord} index={i} />)}
                 </div>
               </div>
             ))}
@@ -437,6 +534,14 @@ export default function TabTurni({ turni: tuttiTurni, dipendenti, cantieri, lavo
         record={editRecord}
         onSuccess={handleEditSuccess}
         onCancel={() => setEditRecord(null)}
+      />
+
+      {/* Dialog conferma eliminazione */}
+      <DeleteConfirmDialog
+        record={deleteRecord}
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setDeleteRecord(null)}
+        loading={deleting}
       />
     </div>
   );

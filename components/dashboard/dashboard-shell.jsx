@@ -37,7 +37,11 @@ export default function DashboardShell({ turni: turniIniziali, dipendenti, canti
     setTurni((prev) => prev.map((t) => (t.id === turnoAggiornato.id ? turnoAggiornato : t)));
   }
 
-  const tabProps = { turni, dipendenti, cantieri, lavori, macchinari, onAggiornaTurno: aggiornaTurno };
+  function rimuoviTurno(id) {
+    setTurni((prev) => prev.filter((t) => t.id !== id));
+  }
+
+  const tabProps = { turni, dipendenti, cantieri, lavori, macchinari, onAggiornaTurno: aggiornaTurno, onRimuoviTurno: rimuoviTurno };
 
   return (
     <div className="flex gap-6 min-h-screen">

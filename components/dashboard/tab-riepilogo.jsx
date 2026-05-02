@@ -19,8 +19,6 @@ import {
 } from "@/lib/stats";
 import { calcMin } from "@/lib/utils";
 import {
-  BarChart,
-  Bar,
   XAxis,
   YAxis,
   Tooltip,
@@ -237,7 +235,7 @@ function OreCarousel({ title, icon: Icon, data, colorFn, delay = 0.38 }) {
         </div>
       </div>
 
-      <div className="overflow-hidden relative" style={{ minHeight: 220 }}>
+      <div className="overflow-hidden relative" style={{ height: 260 }}>
         {data.length === 0 ? (
           <p
             className="text-center text-sm py-10"
@@ -266,7 +264,7 @@ function OreCarousel({ title, icon: Icon, data, colorFn, delay = 0.38 }) {
               >
                 <div
                   className="flex flex-col gap-2.5 overflow-y-auto pr-1"
-                  style={{ maxHeight: 210 }}
+                  style={{ maxHeight: 236 }}
                   onPointerDown={(e) => e.stopPropagation()}
                 >
                   {data.map((c) => {
@@ -396,7 +394,7 @@ function OreCarousel({ title, icon: Icon, data, colorFn, delay = 0.38 }) {
   );
 }
 
-export default function TabRiepilogo({ turni: tuttiTurni, dipendenti }) {
+export default function TabRiepilogo({ turni: tuttiTurni }) {
   const tickStyle = { fontSize: 11, fill: "var(--text-muted)" };
 
   const [selectedMese, setSelectedMese] = useState(() => {
@@ -422,14 +420,21 @@ export default function TabRiepilogo({ turni: tuttiTurni, dipendenti }) {
   const stats = getStats(turniMese);
   const operaiAttivi = new Set(turniMese.map((t) => t.dipendente_id)).size;
 
-  const map = {};
+  const mapOp = {};
   turniMese.forEach((t) => {
     const k = t.nome_operaio || "—";
-    map[k] = (map[k] || 0) + calcMin(t.inizio, t.fine) / 60;
+    mapOp[k] = (mapOp[k] || 0) + calcMin(t.inizio, t.fine);
   });
-  const orePerOperaio = Object.entries(map)
-    .map(([nome, ore]) => ({ nome: nome.split(" ")[0], ore: parseFloat(ore.toFixed(1)) }))
-    .sort((a, b) => b.ore - a.ore);
+  const orePerOperaio = Object.entries(mapOp)
+    .map(([nomeCompleto, min]) => ({
+      nomeCompleto,
+      nome: nomeCompleto.split(" ")[0],
+      min,
+      ore: parseFloat((min / 60).toFixed(1)),
+    }))
+    .sort((a, b) => b.min - a.min);
+  const totMinOperaio = orePerOperaio.reduce((a, c) => a + c.min, 0);
+  const maxOreOperaio = orePerOperaio[0]?.ore || 1;
 
   const allCantieri = getPieData(turniMese);
   const oreSfalcio = getOreLavori(turniMese, SFALCIO_LAVORI);
@@ -526,7 +531,10 @@ export default function TabRiepilogo({ turni: tuttiTurni, dipendenti }) {
               Ore per Operaio
             </span>
           </div>
-          <div className="px-5 py-4">
+          <div
+            className="px-5 py-4 overflow-y-auto pr-6"
+            style={{ height: 260 }}
+          >
             {orePerOperaio.length === 0 ? (
               <p
                 className="text-center text-sm py-6"
@@ -535,35 +543,48 @@ export default function TabRiepilogo({ turni: tuttiTurni, dipendenti }) {
                 Nessun dato
               </p>
             ) : (
-              <ResponsiveContainer width="100%" height={180}>
-                <BarChart
-                  data={orePerOperaio}
-                  layout="vertical"
-                  margin={{ top: 0, right: 16, left: 0, bottom: 0 }}
-                >
-                  <XAxis
-                    type="number"
-                    tick={tickStyle}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <YAxis
-                    type="category"
-                    dataKey="nome"
-                    tick={tickStyle}
-                    axisLine={false}
-                    tickLine={false}
-                    width={56}
-                  />
-                  <Tooltip content={<ChartTooltip />} />
-                  <Bar
-                    dataKey="ore"
-                    name="Ore"
-                    fill="var(--primary)"
-                    radius={[0, 4, 4, 0]}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
+              <div className="flex flex-col gap-2.5">
+                {orePerOperaio.map((op) => {
+                  const ratio = op.ore / maxOreOperaio;
+                  const pct = totMinOperaio
+                    ? Math.round((op.min / totMinOperaio) * 100)
+                    : 0;
+                  return (
+                    <div key={op.nomeCompleto}>
+                      <div className="flex justify-between items-baseline mb-1">
+                        <span
+                          className="text-xs truncate max-w-[65%]"
+                          style={{ color: "var(--text)" }}
+                        >
+                          {op.nome}
+                        </span>
+                        <span
+                          className="text-xs font-semibold shrink-0 ml-2"
+                          style={{ color: "var(--text-muted)" }}
+                        >
+                          {op.ore}h · {pct}%
+                        </span>
+                      </div>
+                      <div
+                        className="h-2 rounded-full overflow-hidden"
+                        style={{ background: "var(--bg-subtle)" }}
+                      >
+                        <motion.div
+                          className="h-full rounded-full"
+                          initial={{ width: 0 }}
+                          animate={{ width: `${ratio * 100}%` }}
+                          transition={{
+                            duration: 0.6,
+                            ease: "easeOut",
+                            delay: 0.05,
+                          }}
+                          style={{ background: redGradient(ratio) }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             )}
           </div>
         </motion.div>
