@@ -10,9 +10,11 @@ import {
   BookUser,
   FileDown,
   Map,
+  Scissors,
 } from "lucide-react";
 import TabRiepilogo   from "./tab-riepilogo";
 import TabTurni       from "./tab-turni";
+import TabSfalcio     from "./tab-sfalcio";
 import TabKm          from "./tab-km";
 import TabMacchinari  from "./tab-macchinari";
 import TabAnagrafica  from "./tab-anagrafica";
@@ -22,6 +24,7 @@ import TabMappa       from "./tab-mappa";
 const TABS = [
   { id: "riepilogo",   label: "Riepilogo",    icon: BarChart2    },
   { id: "turni",       label: "Turni",        icon: CalendarDays },
+  { id: "sfalcio",     label: "Sfalcio",      icon: Scissors     },
   { id: "km",          label: "Km / Rimborsi",icon: Milestone    },
   { id: "macchinari",  label: "Macchinari",   icon: Tractor      },
   { id: "anagrafica",  label: "Anagrafica",   icon: BookUser     },
@@ -123,6 +126,7 @@ export default function DashboardShell({ turni: turniIniziali, dipendenti, canti
           >
             {activeTab === "riepilogo"  && <TabRiepilogo  {...tabProps} />}
             {activeTab === "turni"      && <TabTurni      {...tabProps} />}
+            {activeTab === "sfalcio"    && <TabSfalcio    {...tabProps} />}
             {activeTab === "km"         && <TabKm         {...tabProps} />}
             {activeTab === "macchinari" && <TabMacchinari {...tabProps} />}
             {activeTab === "anagrafica" && <TabAnagrafica {...tabProps} />}
