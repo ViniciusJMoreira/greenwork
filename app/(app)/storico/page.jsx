@@ -264,7 +264,7 @@ function EditTurnoDialog({ record, onSuccess, onCancel }) {
               </motion.button>
             </div>
             <div className="overflow-y-auto p-5">
-              <FormModifica turno={record} onSuccess={onSuccess} />
+              <FormModifica turno={record} onSuccess={onSuccess} onChiudi={onCancel} />
             </div>
           </motion.div>
         </motion.div>
