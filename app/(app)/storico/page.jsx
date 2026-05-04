@@ -19,7 +19,20 @@ import { deleteTurno } from "@/lib/actions";
 import { calcMin, fmtOre, fmtData } from "@/lib/utils";
 
 const GIORNI = ["dom", "lun", "mar", "mer", "gio", "ven", "sab"];
-const MESI_IT = ["Gen","Feb","Mar","Apr","Mag","Giu","Lug","Ago","Set","Ott","Nov","Dic"];
+const MESI_IT = [
+  "Gen",
+  "Feb",
+  "Mar",
+  "Apr",
+  "Mag",
+  "Giu",
+  "Lug",
+  "Ago",
+  "Set",
+  "Ott",
+  "Nov",
+  "Dic",
+];
 
 function fmtMese(ym) {
   const [y, m] = ym.split("-");
@@ -224,7 +237,12 @@ function EditTurnoDialog({ record, onSuccess, onCancel }) {
           exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
           className="fixed inset-0 z-60 flex items-end sm:items-center justify-center"
-          style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", paddingBottom: "calc(max(16px, env(safe-area-inset-bottom)) + 68px)" }}
+          style={{
+            background: "rgba(0,0,0,0.6)",
+            backdropFilter: "blur(4px)",
+            paddingBottom:
+              "calc(max(16px, env(safe-area-inset-bottom)) + 16px)",
+          }}
           onClick={onCancel}
         >
           <motion.div
@@ -264,7 +282,11 @@ function EditTurnoDialog({ record, onSuccess, onCancel }) {
               </motion.button>
             </div>
             <div className="overflow-y-auto p-5">
-              <FormModifica turno={record} onSuccess={onSuccess} onChiudi={onCancel} />
+              <FormModifica
+                turno={record}
+                onSuccess={onSuccess}
+                onChiudi={onCancel}
+              />
             </div>
           </motion.div>
         </motion.div>
@@ -474,7 +496,8 @@ export default function StoricoPage() {
   const filtered = useMemo(
     () =>
       turni.filter((t) => {
-        if (selectedMese !== "all" && !t.data?.startsWith(selectedMese)) return false;
+        if (selectedMese !== "all" && !t.data?.startsWith(selectedMese))
+          return false;
         if (startDate && t.data < startDate) return false;
         if (endDate && t.data > endDate) return false;
         if (
@@ -508,7 +531,12 @@ export default function StoricoPage() {
   }, [filtered]);
 
   return (
-    <div className="flex flex-col gap-5">
+    <div
+      className="flex flex-col gap-5"
+      style={{
+        paddingBottom: "calc(max(16px, env(safe-area-inset-bottom)) + 16px)",
+      }}
+    >
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold" style={{ color: "var(--text)" }}>
