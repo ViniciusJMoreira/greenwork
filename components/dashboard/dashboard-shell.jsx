@@ -12,47 +12,60 @@ import {
   Map,
   Scissors,
 } from "lucide-react";
-import TabRiepilogo   from "./tab-riepilogo";
-import TabTurni       from "./tab-turni";
-import TabSfalcio     from "./tab-sfalcio";
-import TabKm          from "./tab-km";
-import TabMacchinari  from "./tab-macchinari";
-import TabAnagrafica  from "./tab-anagrafica";
-import TabExport      from "./tab-export";
-import TabMappa       from "./tab-mappa";
+import TabRiepilogo from "./tab-riepilogo";
+import TabTurni from "./tab-turni";
+import TabSfalcio from "./tab-sfalcio";
+import TabKm from "./tab-km";
+import TabMacchinari from "./tab-macchinari";
+import TabAnagrafica from "./tab-anagrafica";
+import TabExport from "./tab-export";
+import TabMappa from "./tab-mappa";
 
 const TABS = [
-  { id: "riepilogo",   label: "Riepilogo",    icon: BarChart2    },
-  { id: "turni",       label: "Turni",        icon: CalendarDays },
-  { id: "sfalcio",     label: "Sfalcio",      icon: Scissors     },
-  { id: "km",          label: "Km / Rimborsi",icon: Milestone    },
-  { id: "macchinari",  label: "Macchinari",   icon: Tractor      },
-  { id: "anagrafica",  label: "Anagrafica",   icon: BookUser     },
-  { id: "mappa",       label: "Mappa",        icon: Map          },
-  { id: "export",      label: "Export",       icon: FileDown     },
+  { id: "riepilogo", label: "Riepilogo", icon: BarChart2 },
+  { id: "turni", label: "Turni", icon: CalendarDays },
+  { id: "sfalcio", label: "Sfalcio", icon: Scissors },
+  { id: "km", label: "Km / Rimborsi", icon: Milestone },
+  { id: "macchinari", label: "Macchinari", icon: Tractor },
+  { id: "anagrafica", label: "Anagrafica", icon: BookUser },
+  { id: "mappa", label: "Mappa", icon: Map },
+  { id: "export", label: "Export", icon: FileDown },
 ];
 
-export default function DashboardShell({ turni: turniIniziali, dipendenti, cantieri, lavori, macchinari }) {
+export default function DashboardShell({
+  turni: turniIniziali,
+  dipendenti,
+  cantieri,
+  lavori,
+  macchinari,
+}) {
   const [activeTab, setActiveTab] = useState("riepilogo");
   const [turni, setTurni] = useState(turniIniziali);
 
   function aggiornaTurno(turnoAggiornato) {
-    setTurni((prev) => prev.map((t) => (t.id === turnoAggiornato.id ? turnoAggiornato : t)));
+    setTurni((prev) =>
+      prev.map((t) => (t.id === turnoAggiornato.id ? turnoAggiornato : t)),
+    );
   }
 
   function rimuoviTurno(id) {
     setTurni((prev) => prev.filter((t) => t.id !== id));
   }
 
-  const tabProps = { turni, dipendenti, cantieri, lavori, macchinari, onAggiornaTurno: aggiornaTurno, onRimuoviTurno: rimuoviTurno };
+  const tabProps = {
+    turni,
+    dipendenti,
+    cantieri,
+    lavori,
+    macchinari,
+    onAggiornaTurno: aggiornaTurno,
+    onRimuoviTurno: rimuoviTurno,
+  };
 
   return (
     <div className="flex gap-6 min-h-screen">
-
       {/* ── Sidebar desktop ───────────────────────────────── */}
-      <aside
-        className="hidden md:flex flex-col gap-1 w-52 shrink-0 pt-1"
-      >
+      <aside className="hidden md:flex flex-col gap-1 w-52 shrink-0 pt-1">
         {TABS.map(({ id, label, icon: Icon }) => {
           const active = activeTab === id;
           return (
@@ -66,7 +79,8 @@ export default function DashboardShell({ turni: turniIniziali, dipendenti, canti
                 background: active ? "var(--primary-faint)" : "transparent",
               }}
               onMouseEnter={(e) => {
-                if (!active) e.currentTarget.style.background = "var(--bg-subtle)";
+                if (!active)
+                  e.currentTarget.style.background = "var(--bg-subtle)";
               }}
               onMouseLeave={(e) => {
                 if (!active) e.currentTarget.style.background = "transparent";
@@ -88,8 +102,12 @@ export default function DashboardShell({ turni: turniIniziali, dipendenti, canti
       </aside>
 
       {/* ── Contenuto principale ──────────────────────────── */}
-      <div className="flex-1 min-w-0 flex flex-col gap-4">
-
+      <div
+        className="flex-1 min-w-0 flex flex-col gap-4"
+        style={{
+          paddingBottom: "calc(max(16px, env(safe-area-inset-bottom)) + 16px)",
+        }}
+      >
         {/* Tab bar mobile */}
         <nav
           className="md:hidden flex gap-1 overflow-x-auto pb-1 scrollbar-none"
@@ -124,14 +142,14 @@ export default function DashboardShell({ turni: turniIniziali, dipendenti, canti
             exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.18, ease: "easeOut" }}
           >
-            {activeTab === "riepilogo"  && <TabRiepilogo  {...tabProps} />}
-            {activeTab === "turni"      && <TabTurni      {...tabProps} />}
-            {activeTab === "sfalcio"    && <TabSfalcio    {...tabProps} />}
-            {activeTab === "km"         && <TabKm         {...tabProps} />}
+            {activeTab === "riepilogo" && <TabRiepilogo {...tabProps} />}
+            {activeTab === "turni" && <TabTurni {...tabProps} />}
+            {activeTab === "sfalcio" && <TabSfalcio {...tabProps} />}
+            {activeTab === "km" && <TabKm {...tabProps} />}
             {activeTab === "macchinari" && <TabMacchinari {...tabProps} />}
             {activeTab === "anagrafica" && <TabAnagrafica {...tabProps} />}
-            {activeTab === "export"     && <TabExport     {...tabProps} />}
-            {activeTab === "mappa"      && <TabMappa      cantieri={cantieri} />}
+            {activeTab === "export" && <TabExport {...tabProps} />}
+            {activeTab === "mappa" && <TabMappa cantieri={cantieri} />}
           </motion.div>
         </AnimatePresence>
       </div>

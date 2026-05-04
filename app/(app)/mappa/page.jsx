@@ -9,35 +9,57 @@ function MapLoader() {
   return (
     <div
       className="flex flex-col items-center justify-center gap-3 rounded-xl border"
-      style={{ height: 420, background: "var(--bg-card)", borderColor: "var(--border)" }}
+      style={{
+        height: 420,
+        background: "var(--bg-card)",
+        borderColor: "var(--border)",
+      }}
     >
-      <Loader2 className="h-6 w-6 animate-spin" style={{ color: "var(--text-muted)" }} />
-      <p className="text-sm" style={{ color: "var(--text-muted)" }}>Caricamento mappa…</p>
+      <Loader2
+        className="h-6 w-6 animate-spin"
+        style={{ color: "var(--text-muted)" }}
+      />
+      <p className="text-sm" style={{ color: "var(--text-muted)" }}>
+        Caricamento mappa…
+      </p>
     </div>
   );
 }
 
 // Read-only map — no onEdit prop passed so the popup shows only "Naviga →"
-const MappaView = dynamic(
-  () => import("@/components/mappa/mappa-view"),
-  { ssr: false, loading: () => <MapLoader /> },
-);
+const MappaView = dynamic(() => import("@/components/mappa/mappa-view"), {
+  ssr: false,
+  loading: () => <MapLoader />,
+});
 
 export default function MappaPage() {
   const { cantieri } = useApp();
 
-  const positioned   = useMemo(() => cantieri.filter((c) => c.lat && c.lng && !c.isAssenza), [cantieri]);
-  const unpositioned = useMemo(() => cantieri.filter((c) => (!c.lat || !c.lng) && !c.isAssenza), [cantieri]);
+  const positioned = useMemo(
+    () => cantieri.filter((c) => c.lat && c.lng && !c.isAssenza),
+    [cantieri],
+  );
+  const unpositioned = useMemo(
+    () => cantieri.filter((c) => (!c.lat || !c.lng) && !c.isAssenza),
+    [cantieri],
+  );
 
   return (
-    <div className="flex flex-col gap-4">
+    <div
+      className="flex flex-col gap-4"
+      style={{
+        paddingBottom: "calc(max(16px, env(safe-area-inset-bottom)) + 16px)",
+      }}
+    >
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.25 }}
       >
-        <h1 className="text-xl font-bold" style={{ color: "var(--text)" }}>Cantieri</h1>
+        <h1 className="text-xl font-bold" style={{ color: "var(--text)" }}>
+          Cantieri
+        </h1>
         <p className="text-sm mt-0.5" style={{ color: "var(--text-muted)" }}>
           {positioned.length} cantieri sulla mappa
         </p>
@@ -49,7 +71,11 @@ export default function MappaPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, delay: 0.05 }}
         className="rounded-xl border overflow-hidden"
-        style={{ height: 420, borderColor: "var(--border)", isolation: "isolate" }}
+        style={{
+          height: 420,
+          borderColor: "var(--border)",
+          isolation: "isolate",
+        }}
       >
         <MappaView cantieri={cantieri} />
       </motion.div>
@@ -63,9 +89,15 @@ export default function MappaPage() {
           className="rounded-xl border overflow-hidden"
           style={{ background: "var(--bg-card)", borderColor: "var(--border)" }}
         >
-          <div className="px-4 py-3 border-b flex items-center gap-2" style={{ borderColor: "var(--border)" }}>
+          <div
+            className="px-4 py-3 border-b flex items-center gap-2"
+            style={{ borderColor: "var(--border)" }}
+          >
             <MapPin className="h-4 w-4" style={{ color: "var(--primary)" }} />
-            <span className="text-sm font-semibold" style={{ color: "var(--text)" }}>
+            <span
+              className="text-sm font-semibold"
+              style={{ color: "var(--text)" }}
+            >
               Cantieri attivi
             </span>
           </div>
@@ -81,22 +113,42 @@ export default function MappaPage() {
                 rel="noopener noreferrer"
                 className="flex items-center justify-between px-4 py-3 border-b last:border-0 transition-colors"
                 style={{ borderColor: "var(--border)", textDecoration: "none" }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-subtle)")}
-                onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.background = "var(--bg-subtle)")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.background = "transparent")
+                }
               >
                 <div className="flex items-center gap-3">
                   <div
                     className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
                     style={{ background: "var(--primary-faint)" }}
                   >
-                    <MapPin className="h-3.5 w-3.5" style={{ color: "var(--primary)" }} />
+                    <MapPin
+                      className="h-3.5 w-3.5"
+                      style={{ color: "var(--primary)" }}
+                    />
                   </div>
                   <div>
-                    <p className="text-sm font-medium" style={{ color: "var(--text)" }}>{c.cantiere}</p>
-                    <p className="text-xs font-mono" style={{ color: "var(--text-muted)" }}>{c.cod_cantiere}</p>
+                    <p
+                      className="text-sm font-medium"
+                      style={{ color: "var(--text)" }}
+                    >
+                      {c.cantiere}
+                    </p>
+                    <p
+                      className="text-xs font-mono"
+                      style={{ color: "var(--text-muted)" }}
+                    >
+                      {c.cod_cantiere}
+                    </p>
                   </div>
                 </div>
-                <span className="text-xs font-semibold shrink-0" style={{ color: "var(--primary)" }}>
+                <span
+                  className="text-xs font-semibold shrink-0"
+                  style={{ color: "var(--primary)" }}
+                >
                   Naviga →
                 </span>
               </motion.a>
@@ -112,7 +164,10 @@ export default function MappaPage() {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.35, duration: 0.2 }}
           className="rounded-xl border px-4 py-3 flex items-center gap-3"
-          style={{ background: "var(--bg-subtle)", borderColor: "var(--border)" }}
+          style={{
+            background: "var(--bg-subtle)",
+            borderColor: "var(--border)",
+          }}
         >
           <p className="text-xs" style={{ color: "var(--text-muted)" }}>
             {unpositioned.length} cantieri non ancora posizionati sulla mappa

@@ -7,11 +7,27 @@ import { getStats } from "@/lib/stats";
 import { calcMin } from "@/lib/utils";
 
 const MESI = [
-  "Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno",
-  "Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre",
+  "Gennaio",
+  "Febbraio",
+  "Marzo",
+  "Aprile",
+  "Maggio",
+  "Giugno",
+  "Luglio",
+  "Agosto",
+  "Settembre",
+  "Ottobre",
+  "Novembre",
+  "Dicembre",
 ];
 const GIORNI = [
-  "domenica","lunedì","martedì","mercoledì","giovedì","venerdì","sabato",
+  "domenica",
+  "lunedì",
+  "martedì",
+  "mercoledì",
+  "giovedì",
+  "venerdì",
+  "sabato",
 ];
 
 function KpiCard({ icon: Icon, value, label, index = 0, accent = false }) {
@@ -19,14 +35,28 @@ function KpiCard({ icon: Icon, value, label, index = 0, accent = false }) {
     <motion.div
       initial={{ opacity: 0, y: 20, rotateX: 12, scale: 0.95 }}
       animate={{ opacity: 1, y: 0, rotateX: 0, scale: 1 }}
-      transition={{ type: "spring", damping: 20, stiffness: 290, delay: 0.1 + index * 0.08 }}
+      transition={{
+        type: "spring",
+        damping: 20,
+        stiffness: 290,
+        delay: 0.1 + index * 0.08,
+      }}
       className="rounded-xl border p-4 flex flex-col gap-3"
-      style={{ background: "var(--bg-card)", borderColor: "var(--border)", transformPerspective: 700 }}
+      style={{
+        background: "var(--bg-card)",
+        borderColor: "var(--border)",
+        transformPerspective: 700,
+      }}
     >
       <motion.div
         initial={{ scale: 0, rotate: -20 }}
         animate={{ scale: 1, rotate: 0 }}
-        transition={{ type: "spring", stiffness: 400, damping: 18, delay: 0.2 + index * 0.08 }}
+        transition={{
+          type: "spring",
+          stiffness: 400,
+          damping: 18,
+          delay: 0.2 + index * 0.08,
+        }}
         className="w-8 h-8 rounded-lg flex items-center justify-center"
         style={{ background: "var(--primary-faint)" }}
       >
@@ -50,14 +80,26 @@ function KpiCard({ icon: Icon, value, label, index = 0, accent = false }) {
 function HeatCell({ day, hours, index = 0 }) {
   let bg = "var(--bg-subtle)";
   let color = "var(--text-faint)";
-  if (hours >= 8) { bg = "#b91c1c"; color = "white"; }
-  else if (hours >= 4) { bg = "#fca5a5"; color = "#7f1d1d"; }
-  else if (hours > 0) { bg = "#fee2e2"; color = "#b91c1c"; }
+  if (hours >= 8) {
+    bg = "#b91c1c";
+    color = "white";
+  } else if (hours >= 4) {
+    bg = "#fca5a5";
+    color = "#7f1d1d";
+  } else if (hours > 0) {
+    bg = "#fee2e2";
+    color = "#b91c1c";
+  }
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0 }}
       animate={{ opacity: 1, scale: 1 }}
-      transition={{ type: "spring", stiffness: 500, damping: 22, delay: 0.4 + index * 0.012 }}
+      transition={{
+        type: "spring",
+        stiffness: 500,
+        damping: 22,
+        delay: 0.4 + index * 0.012,
+      }}
       title={`${day}: ${hours > 0 ? hours.toFixed(1) + "h" : "riposo"}`}
       className="aspect-square rounded flex items-center justify-center text-[9px] font-bold cursor-default"
       style={{ background: bg, color }}
@@ -80,10 +122,17 @@ export default function DashboardPage() {
   const stats = useMemo(() => getStats(turniMese), [turniMese]);
 
   // Valori KPI — se 0 mostra "-"
-  const oreTot    = stats.minutiTotali > 0 ? (stats.minutiTotali / 60).toFixed(1) + "h" : "—";
-  const giorni    = stats.giorniLavorati > 0 ? stats.giorniLavorati : "—";
-  const media     = stats.giorniLavorati > 0 ? (stats.minutiTotali / 60 / stats.giorniLavorati).toFixed(1) + "h" : "—";
-  const kmTot     = useMemo(() => turniMese.reduce((acc, t) => acc + (t.km_totale || 0), 0), [turniMese]);
+  const oreTot =
+    stats.minutiTotali > 0 ? (stats.minutiTotali / 60).toFixed(1) + "h" : "—";
+  const giorni = stats.giorniLavorati > 0 ? stats.giorniLavorati : "—";
+  const media =
+    stats.giorniLavorati > 0
+      ? (stats.minutiTotali / 60 / stats.giorniLavorati).toFixed(1) + "h"
+      : "—";
+  const kmTot = useMemo(
+    () => turniMese.reduce((acc, t) => acc + (t.km_totale || 0), 0),
+    [turniMese],
+  );
   const kmDisplay = kmTot > 0 ? kmTot.toFixed(1) + " km" : "—";
 
   // Buoni pasto — 1 per ogni giorno con ore totali >= 6.5h
@@ -97,7 +146,11 @@ export default function DashboardPage() {
   }, [turniMese]);
 
   // Heatmap mese corrente
-  const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+  const daysInMonth = new Date(
+    today.getFullYear(),
+    today.getMonth() + 1,
+    0,
+  ).getDate();
   const firstDayOffset = (() => {
     const d = new Date(today.getFullYear(), today.getMonth(), 1).getDay();
     return d === 0 ? 6 : d - 1;
@@ -114,7 +167,12 @@ export default function DashboardPage() {
   const dateLabel = `${GIORNI[today.getDay()]} ${today.getDate()} ${MESI[today.getMonth()]} ${today.getFullYear()}`;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div
+      className="flex flex-col gap-4"
+      style={{
+        paddingBottom: "calc(max(16px, env(safe-area-inset-bottom)) + 16px)",
+      }}
+    >
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -12 }}
@@ -125,29 +183,68 @@ export default function DashboardPage() {
         <h1 className="text-xl font-bold" style={{ color: "var(--text)" }}>
           Bentornato, {operaio?.nome}
         </h1>
-        <p className="text-sm capitalize mt-0.5" style={{ color: "var(--text-muted)" }}>
+        <p
+          className="text-sm capitalize mt-0.5"
+          style={{ color: "var(--text-muted)" }}
+        >
           {dateLabel}
         </p>
       </motion.div>
 
       {/* 4 KPI */}
       <div className="grid grid-cols-2 gap-3">
-        <KpiCard icon={Clock}        value={oreTot}    label={`Ore — ${MESI[today.getMonth()]}`} index={0} accent />
-        <KpiCard icon={CalendarDays} value={giorni}    label="Giorni Lavorati"   index={1} />
-        <KpiCard icon={UtensilsCrossed} value={buoniPasto > 0 ? buoniPasto : "—"} label="Buoni Pasto" index={2} />
-        <KpiCard icon={Milestone}    value={kmDisplay} label="Km Rimborso"       index={3} />
+        <KpiCard
+          icon={Clock}
+          value={oreTot}
+          label={`Ore — ${MESI[today.getMonth()]}`}
+          index={0}
+          accent
+        />
+        <KpiCard
+          icon={CalendarDays}
+          value={giorni}
+          label="Giorni Lavorati"
+          index={1}
+        />
+        <KpiCard
+          icon={UtensilsCrossed}
+          value={buoniPasto > 0 ? buoniPasto : "—"}
+          label="Buoni Pasto"
+          index={2}
+        />
+        <KpiCard
+          icon={Milestone}
+          value={kmDisplay}
+          label="Km Rimborso"
+          index={3}
+        />
       </div>
 
       {/* Calendario presenze */}
       <motion.div
         initial={{ opacity: 0, y: 18, rotateX: 8 }}
         animate={{ opacity: 1, y: 0, rotateX: 0 }}
-        transition={{ type: "spring", damping: 22, stiffness: 280, delay: 0.45 }}
+        transition={{
+          type: "spring",
+          damping: 22,
+          stiffness: 280,
+          delay: 0.45,
+        }}
         className="rounded-xl border overflow-hidden"
-        style={{ background: "var(--bg-card)", borderColor: "var(--border)", transformPerspective: 800 }}
+        style={{
+          background: "var(--bg-card)",
+          borderColor: "var(--border)",
+          transformPerspective: 800,
+        }}
       >
-        <div className="flex items-center gap-2 px-5 py-3.5 border-b" style={{ borderColor: "var(--border)" }}>
-          <span className="text-sm font-semibold" style={{ color: "var(--text)" }}>
+        <div
+          className="flex items-center gap-2 px-5 py-3.5 border-b"
+          style={{ borderColor: "var(--border)" }}
+        >
+          <span
+            className="text-sm font-semibold"
+            style={{ color: "var(--text)" }}
+          >
             Presenze {MESI[today.getMonth()]}
           </span>
         </div>
@@ -155,25 +252,52 @@ export default function DashboardPage() {
           {/* Header giorni */}
           <div className="grid grid-cols-7 gap-1 mb-1">
             {["L", "M", "M", "G", "V", "S", "D"].map((d, i) => (
-              <div key={i} className="text-center text-[10px] font-bold" style={{ color: "var(--text-faint)" }}>
+              <div
+                key={i}
+                className="text-center text-[10px] font-bold"
+                style={{ color: "var(--text-faint)" }}
+              >
                 {d}
               </div>
             ))}
           </div>
           {/* Celle giorno */}
           <div className="grid grid-cols-7 gap-1">
-            {Array.from({ length: firstDayOffset }).map((_, i) => <div key={`e${i}`} />)}
+            {Array.from({ length: firstDayOffset }).map((_, i) => (
+              <div key={`e${i}`} />
+            ))}
             {Array.from({ length: daysInMonth }).map((_, i) => (
-              <HeatCell key={i + 1} day={i + 1} hours={orePerGiornoMap[i + 1] || 0} index={i} />
+              <HeatCell
+                key={i + 1}
+                day={i + 1}
+                hours={orePerGiornoMap[i + 1] || 0}
+                index={i}
+              />
             ))}
           </div>
           {/* Legenda */}
           <div className="flex items-center gap-1.5 mt-3 justify-end">
-            <span className="text-[10px]" style={{ color: "var(--text-faint)" }}>Meno</span>
-            {["var(--bg-subtle)", "#fee2e2", "#fca5a5", "#b91c1c"].map((c, i) => (
-              <div key={i} className="w-3 h-3 rounded-sm" style={{ background: c }} />
-            ))}
-            <span className="text-[10px]" style={{ color: "var(--text-faint)" }}>Più</span>
+            <span
+              className="text-[10px]"
+              style={{ color: "var(--text-faint)" }}
+            >
+              Meno
+            </span>
+            {["var(--bg-subtle)", "#fee2e2", "#fca5a5", "#b91c1c"].map(
+              (c, i) => (
+                <div
+                  key={i}
+                  className="w-3 h-3 rounded-sm"
+                  style={{ background: c }}
+                />
+              ),
+            )}
+            <span
+              className="text-[10px]"
+              style={{ color: "var(--text-faint)" }}
+            >
+              Più
+            </span>
           </div>
         </div>
       </motion.div>
