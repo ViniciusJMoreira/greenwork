@@ -2,15 +2,34 @@
 import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
-  SlidersHorizontal, ChevronDown, ChevronUp, FileSearch, Wrench, Pencil, Trash2,
+  SlidersHorizontal,
+  ChevronDown,
+  ChevronUp,
+  FileSearch,
+  Wrench,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import FormModifica from "@/components/form/form-modifica";
 import { deleteTurno } from "@/lib/actions";
 import { calcMin, fmtOre } from "@/lib/utils";
 
-const GIORNI = ["dom","lun","mar","mer","gio","ven","sab"];
-const MESI_IT = ["Gen","Feb","Mar","Apr","Mag","Giu","Lug","Ago","Set","Ott","Nov","Dic"];
+const GIORNI = ["dom", "lun", "mar", "mer", "gio", "ven", "sab"];
+const MESI_IT = [
+  "Gen",
+  "Feb",
+  "Mar",
+  "Apr",
+  "Mag",
+  "Giu",
+  "Lug",
+  "Ago",
+  "Set",
+  "Ott",
+  "Nov",
+  "Dic",
+];
 
 function fmtMese(ym) {
   const [y, m] = ym.split("-");
@@ -20,40 +39,65 @@ function fmtMese(ym) {
 function formatHeader(dataStr) {
   const [y, m, d] = dataStr.split("-").map(Number);
   const dn = GIORNI[new Date(y, m - 1, d).getDay()];
-  return `${dn} ${d} ${["","gen","feb","mar","apr","mag","giu","lug","ago","set","ott","nov","dic"][m]}`;
+  return `${dn} ${d} ${["", "gen", "feb", "mar", "apr", "mag", "giu", "lug", "ago", "set", "ott", "nov", "dic"][m]}`;
 }
 
 function OperaioPill({ nome }) {
   return (
-    <span className="inline-flex items-center text-[11px] font-semibold px-2 py-0.5 rounded-full border"
-      style={{ color: "var(--primary)", background: "var(--primary-faint)", borderColor: "var(--primary)" + "33" }}>
+    <span
+      className="inline-flex items-center text-[11px] font-semibold px-2 py-0.5 rounded-full border"
+      style={{
+        color: "var(--primary)",
+        background: "var(--primary-faint)",
+        borderColor: "var(--primary)" + "33",
+      }}
+    >
       {nome}
     </span>
   );
 }
 
-function TurnoCard({ record, showOperaio = false, onEdit, onDelete, index = 0 }) {
+function TurnoCard({
+  record,
+  showOperaio = false,
+  onEdit,
+  onDelete,
+  index = 0,
+}) {
   const min = calcMin(record.inizio, record.fine);
   return (
     <motion.div
-      initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.18, delay: index * 0.035 }}
       className="rounded-xl border overflow-hidden"
       style={{ background: "var(--bg-card)", borderColor: "var(--border)" }}
     >
       <div className="px-4 pt-4 pb-3 flex flex-col gap-3">
-
         {/* Riga 1: cantiere + lavoro pill */}
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold leading-snug" style={{ color: "var(--text)" }}>{record.cantiere}</p>
+            <p
+              className="text-sm font-bold leading-snug"
+              style={{ color: "var(--text)" }}
+            >
+              {record.cantiere}
+            </p>
             {showOperaio && record.nome_operaio && (
-              <div className="mt-1"><OperaioPill nome={record.nome_operaio} /></div>
+              <div className="mt-1">
+                <OperaioPill nome={record.nome_operaio} />
+              </div>
             )}
           </div>
           {record.lavoro && (
-            <span className="inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-full border shrink-0"
-              style={{ color: "var(--primary)", background: "var(--primary-faint)", borderColor: "var(--primary)33" }}>
+            <span
+              className="inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-full border shrink-0"
+              style={{
+                color: "var(--primary)",
+                background: "var(--primary-faint)",
+                borderColor: "var(--primary)33",
+              }}
+            >
               {record.lavoro}
             </span>
           )}
@@ -61,21 +105,52 @@ function TurnoCard({ record, showOperaio = false, onEdit, onDelete, index = 0 })
 
         {/* Riga 2: timeline con ore al centro */}
         <div className="flex items-center gap-2">
-          <span className="text-xs font-mono font-semibold tabular-nums" style={{ color: "var(--text)" }}>{record.inizio}</span>
+          <span
+            className="text-xs font-mono font-semibold tabular-nums"
+            style={{ color: "var(--text)" }}
+          >
+            {record.inizio}
+          </span>
           <div className="flex-1 flex items-center gap-1">
-            <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "var(--primary)" }} />
-            <div className="flex-1 h-px" style={{ background: "var(--border)" }} />
-            <span className="text-xs font-bold px-2 shrink-0" style={{ color: "var(--primary)" }}>{fmtOre(min)}</span>
-            <div className="flex-1 h-px" style={{ background: "var(--border)" }} />
-            <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: "var(--primary)" }} />
+            <div
+              className="w-1.5 h-1.5 rounded-full shrink-0"
+              style={{ background: "var(--primary)" }}
+            />
+            <div
+              className="flex-1 h-px"
+              style={{ background: "var(--border)" }}
+            />
+            <span
+              className="text-xs font-bold px-2 shrink-0"
+              style={{ color: "var(--primary)" }}
+            >
+              {fmtOre(min)}
+            </span>
+            <div
+              className="flex-1 h-px"
+              style={{ background: "var(--border)" }}
+            />
+            <div
+              className="w-1.5 h-1.5 rounded-full shrink-0"
+              style={{ background: "var(--primary)" }}
+            />
           </div>
-          <span className="text-xs font-mono font-semibold tabular-nums" style={{ color: "var(--text)" }}>{record.fine}</span>
+          <span
+            className="text-xs font-mono font-semibold tabular-nums"
+            style={{ color: "var(--text)" }}
+          >
+            {record.fine}
+          </span>
         </div>
 
         {/* Riga 3: mezzo */}
         {record.mezzo && (
-          <span className="flex items-center gap-1 text-xs" style={{ color: "var(--text-faint)" }}>
-            <Wrench className="h-3 w-3 shrink-0" />{record.mezzo}
+          <span
+            className="flex items-center gap-1 text-xs"
+            style={{ color: "var(--text-faint)" }}
+          >
+            <Wrench className="h-3 w-3 shrink-0" />
+            {record.mezzo}
           </span>
         )}
       </div>
@@ -83,10 +158,22 @@ function TurnoCard({ record, showOperaio = false, onEdit, onDelete, index = 0 })
       {/* Note */}
       {record.note && (
         <div className="px-4 pb-3">
-          <div className="rounded-lg px-3 py-2.5 flex flex-col gap-1"
-            style={{ background: "var(--bg-subtle)" }}>
-            <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "var(--text-faint)" }}>Note</span>
-            <p className="text-xs leading-relaxed" style={{ color: "var(--text-muted)" }}>{record.note}</p>
+          <div
+            className="rounded-lg px-3 py-2.5 flex flex-col gap-1"
+            style={{ background: "var(--bg-subtle)" }}
+          >
+            <span
+              className="text-[10px] font-semibold uppercase tracking-wider"
+              style={{ color: "var(--text-faint)" }}
+            >
+              Note
+            </span>
+            <p
+              className="text-xs leading-relaxed"
+              style={{ color: "var(--text-muted)" }}
+            >
+              {record.note}
+            </p>
           </div>
         </div>
       )}
@@ -95,22 +182,50 @@ function TurnoCard({ record, showOperaio = false, onEdit, onDelete, index = 0 })
       {(onEdit || onDelete) && (
         <div className="flex items-center justify-end gap-1.5 px-4 pb-3">
           {onEdit && (
-            <motion.button whileTap={{ scale: 0.93 }} transition={{ duration: 0.1 }}
+            <motion.button
+              whileTap={{ scale: 0.93 }}
+              transition={{ duration: 0.1 }}
               onClick={() => onEdit(record)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors"
-              style={{ color: "var(--text-muted)", borderColor: "var(--border)" }}
-              onMouseEnter={(e) => { e.currentTarget.style.color = "var(--primary)"; e.currentTarget.style.borderColor = "var(--primary)"; e.currentTarget.style.background = "var(--primary-faint)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.background = "transparent"; }}>
+              style={{
+                color: "var(--text-muted)",
+                borderColor: "var(--border)",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = "var(--primary)";
+                e.currentTarget.style.borderColor = "var(--primary)";
+                e.currentTarget.style.background = "var(--primary-faint)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = "var(--text-muted)";
+                e.currentTarget.style.borderColor = "var(--border)";
+                e.currentTarget.style.background = "transparent";
+              }}
+            >
               <Pencil className="h-3 w-3" /> Modifica
             </motion.button>
           )}
           {onDelete && (
-            <motion.button whileTap={{ scale: 0.93 }} transition={{ duration: 0.1 }}
+            <motion.button
+              whileTap={{ scale: 0.93 }}
+              transition={{ duration: 0.1 }}
               onClick={() => onDelete(record)}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors"
-              style={{ color: "var(--text-muted)", borderColor: "var(--border)" }}
-              onMouseEnter={(e) => { e.currentTarget.style.color = "var(--destructive)"; e.currentTarget.style.borderColor = "var(--destructive)"; e.currentTarget.style.background = "rgba(220,38,38,0.08)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.background = "transparent"; }}>
+              style={{
+                color: "var(--text-muted)",
+                borderColor: "var(--border)",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = "var(--destructive)";
+                e.currentTarget.style.borderColor = "var(--destructive)";
+                e.currentTarget.style.background = "rgba(220,38,38,0.08)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = "var(--text-muted)";
+                e.currentTarget.style.borderColor = "var(--border)";
+                e.currentTarget.style.background = "transparent";
+              }}
+            >
               <Trash2 className="h-3 w-3" /> Elimina
             </motion.button>
           )}
@@ -122,22 +237,35 @@ function TurnoCard({ record, showOperaio = false, onEdit, onDelete, index = 0 })
 
 function OperaioCard({ dipendente, turni, onEdit, onDelete, index = 0 }) {
   const [expanded, setExpanded] = useState(false);
-  const min    = turni.reduce((a, t) => a + calcMin(t.inizio, t.fine), 0);
+  const min = turni.reduce((a, t) => a + calcMin(t.inizio, t.fine), 0);
   const giorni = new Set(turni.map((t) => t.data)).size;
 
   const gruppiDate = turni
     .reduce((acc, t) => {
       if (!t.data) return acc;
       const ex = acc.find((g) => g.data === t.data);
-      if (ex) { ex.records.push(t); ex.totMin += calcMin(t.inizio, t.fine); }
-      else acc.push({ data: t.data, records: [t], totMin: calcMin(t.inizio, t.fine) });
+      if (ex) {
+        ex.records.push(t);
+        ex.totMin += calcMin(t.inizio, t.fine);
+      } else
+        acc.push({
+          data: t.data,
+          records: [t],
+          totMin: calcMin(t.inizio, t.fine),
+        });
       return acc;
     }, [])
-    .map((g) => ({ ...g, records: g.records.sort((a, b) => (a.inizio || "").localeCompare(b.inizio || "")) }));
+    .map((g) => ({
+      ...g,
+      records: g.records.sort((a, b) =>
+        (a.inizio || "").localeCompare(b.inizio || ""),
+      ),
+    }));
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.22, delay: index * 0.06 }}
       className="rounded-xl border overflow-hidden"
       style={{ background: "var(--bg-card)", borderColor: "var(--border)" }}
@@ -146,22 +274,47 @@ function OperaioCard({ dipendente, turni, onEdit, onDelete, index = 0 }) {
         whileTap={{ scale: 0.99 }}
         onClick={() => setExpanded((v) => !v)}
         className="w-full flex items-center justify-between px-4 py-3.5 transition-colors"
-        onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-subtle)")}
+        onMouseEnter={(e) =>
+          (e.currentTarget.style.background = "var(--bg-subtle)")
+        }
         onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
       >
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0" style={{ background: "var(--primary)" }}>
-            {dipendente.nome[0]}{dipendente.cognome[0]}
+          <div
+            className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
+            style={{ background: "var(--primary)" }}
+          >
+            {dipendente.nome[0]}
+            {dipendente.cognome[0]}
           </div>
           <div className="text-left">
-            <p className="text-sm font-semibold" style={{ color: "var(--text)" }}>{dipendente.nome} {dipendente.cognome}</p>
-            <p className="text-xs" style={{ color: "var(--text-muted)" }}>{turni.length} {turni.length === 1 ? "turno" : "turni"} · {giorni} {giorni === 1 ? "giorno" : "giorni"}</p>
+            <p
+              className="text-sm font-semibold"
+              style={{ color: "var(--text)" }}
+            >
+              {dipendente.nome} {dipendente.cognome}
+            </p>
+            <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+              {turni.length} {turni.length === 1 ? "turno" : "turni"} · {giorni}{" "}
+              {giorni === 1 ? "giorno" : "giorni"}
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-sm font-bold" style={{ color: "var(--primary)" }}>{fmtOre(min)}</span>
-          <motion.div animate={{ rotate: expanded ? 180 : 0 }} transition={{ duration: 0.2 }}>
-            <ChevronDown className="h-4 w-4" style={{ color: "var(--text-faint)" }} />
+          <span
+            className="text-sm font-bold"
+            style={{ color: "var(--primary)" }}
+          >
+            {fmtOre(min)}
+          </span>
+          <motion.div
+            animate={{ rotate: expanded ? 180 : 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <ChevronDown
+              className="h-4 w-4"
+              style={{ color: "var(--text-faint)" }}
+            />
           </motion.div>
         </div>
       </motion.button>
@@ -169,19 +322,46 @@ function OperaioCard({ dipendente, turni, onEdit, onDelete, index = 0 }) {
       <AnimatePresence initial={false}>
         {expanded && (
           <motion.div
-            initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.24, ease: [0.4, 0, 0.2, 1] }} style={{ overflow: "hidden" }}
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.24, ease: [0.4, 0, 0.2, 1] }}
+            style={{ overflow: "hidden" }}
           >
-            <div className="border-t px-4 pb-4 pt-3 flex flex-col gap-4" style={{ borderColor: "var(--border)" }}>
+            <div
+              className="border-t px-4 pb-4 pt-3 flex flex-col gap-4"
+              style={{ borderColor: "var(--border)" }}
+            >
               {gruppiDate.map(({ data, records, totMin: dayMin }) => (
                 <div key={data}>
                   <div className="flex items-center gap-3 mb-2 px-1">
-                    <span className="text-xs font-semibold capitalize" style={{ color: "var(--text-muted)" }}>{formatHeader(data)}</span>
-                    <div className="flex-1 h-px" style={{ background: "var(--border)" }} />
-                    <span className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: "var(--primary)", color: "white" }}>{fmtOre(dayMin)}</span>
+                    <span
+                      className="text-xs font-semibold capitalize"
+                      style={{ color: "var(--text-muted)" }}
+                    >
+                      {formatHeader(data)}
+                    </span>
+                    <div
+                      className="flex-1 h-px"
+                      style={{ background: "var(--border)" }}
+                    />
+                    <span
+                      className="text-[11px] font-bold px-2 py-0.5 rounded-full"
+                      style={{ background: "var(--primary)", color: "white" }}
+                    >
+                      {fmtOre(dayMin)}
+                    </span>
                   </div>
                   <div className="flex flex-col gap-2">
-                    {records.map((t, i) => <TurnoCard key={t.id} record={t} onEdit={onEdit} onDelete={onDelete} index={i} />)}
+                    {records.map((t, i) => (
+                      <TurnoCard
+                        key={t.id}
+                        record={t}
+                        onEdit={onEdit}
+                        onDelete={onDelete}
+                        index={i}
+                      />
+                    ))}
                   </div>
                 </div>
               ))}
@@ -199,10 +379,17 @@ function EditTurnoDialog({ record, onSuccess, onCancel }) {
       {record && (
         <motion.div
           key="edit-backdrop"
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
           className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center"
-          style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", paddingBottom: "calc(max(16px, env(safe-area-inset-bottom)) + 68px)" }}
+          style={{
+            background: "rgba(0,0,0,0.6)",
+            backdropFilter: "blur(4px)",
+            paddingBottom:
+              "calc(max(16px, env(safe-area-inset-bottom)) + 64px)",
+          }}
           onClick={onCancel}
         >
           <motion.div
@@ -215,21 +402,38 @@ function EditTurnoDialog({ record, onSuccess, onCancel }) {
             className="w-full sm:max-w-md rounded-2xl flex flex-col max-h-[85vh] overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between px-5 py-4 border-b shrink-0" style={{ borderColor: "var(--border)" }}>
-              <h2 className="text-base font-bold" style={{ color: "var(--text)" }}>Modifica turno</h2>
+            <div
+              className="flex items-center justify-between px-5 py-4 border-b shrink-0"
+              style={{ borderColor: "var(--border)" }}
+            >
+              <h2
+                className="text-base font-bold"
+                style={{ color: "var(--text)" }}
+              >
+                Modifica turno
+              </h2>
               <motion.button
-                whileTap={{ scale: 0.82, rotate: 90 }} transition={{ duration: 0.15 }}
+                whileTap={{ scale: 0.82, rotate: 90 }}
+                transition={{ duration: 0.15 }}
                 onClick={onCancel}
                 className="p-1.5 rounded-lg transition-colors"
                 style={{ color: "var(--text-muted)" }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-subtle)")}
-                onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.background = "var(--bg-subtle)")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.background = "transparent")
+                }
               >
                 ✕
               </motion.button>
             </div>
             <div className="overflow-y-auto p-5">
-              <FormModifica turno={record} onSuccess={onSuccess} onChiudi={onCancel} />
+              <FormModifica
+                turno={record}
+                onSuccess={onSuccess}
+                onChiudi={onCancel}
+              />
             </div>
           </motion.div>
         </motion.div>
@@ -244,10 +448,16 @@ function DeleteConfirmDialog({ record, onConfirm, onCancel, loading }) {
       {record && (
         <motion.div
           key="delete-backdrop"
-          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
           transition={{ duration: 0.2 }}
           className="fixed inset-0 z-[9999] flex items-center justify-center"
-          style={{ background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", padding: "16px" }}
+          style={{
+            background: "rgba(0,0,0,0.6)",
+            backdropFilter: "blur(4px)",
+            padding: "16px",
+          }}
           onClick={onCancel}
         >
           <motion.div
@@ -262,29 +472,64 @@ function DeleteConfirmDialog({ record, onConfirm, onCancel, loading }) {
           >
             <div className="px-5 pt-5 pb-4 flex flex-col gap-1">
               <div className="flex items-center gap-2 mb-2">
-                <Trash2 className="h-5 w-5" style={{ color: "var(--destructive)" }} />
-                <h2 className="text-base font-bold" style={{ color: "var(--text)" }}>Elimina turno</h2>
+                <Trash2
+                  className="h-5 w-5"
+                  style={{ color: "var(--destructive)" }}
+                />
+                <h2
+                  className="text-base font-bold"
+                  style={{ color: "var(--text)" }}
+                >
+                  Elimina turno
+                </h2>
               </div>
               <p className="text-sm" style={{ color: "var(--text-muted)" }}>
                 Stai per eliminare il turno del{" "}
-                <strong style={{ color: "var(--text)" }}>{record.data}</strong> —{" "}
-                <strong style={{ color: "var(--text)" }}>{record.cantiere}</strong>.
+                <strong style={{ color: "var(--text)" }}>{record.data}</strong>{" "}
+                —{" "}
+                <strong style={{ color: "var(--text)" }}>
+                  {record.cantiere}
+                </strong>
+                .
               </p>
-              <p className="text-xs mt-1" style={{ color: "var(--text-faint)" }}>Questa azione non può essere annullata.</p>
+              <p
+                className="text-xs mt-1"
+                style={{ color: "var(--text-faint)" }}
+              >
+                Questa azione non può essere annullata.
+              </p>
             </div>
             <div className="flex gap-3 px-5 pb-5">
               <motion.button
-                whileTap={{ scale: 0.95 }} onClick={onCancel}
+                whileTap={{ scale: 0.95 }}
+                onClick={onCancel}
                 className="flex-1 py-2.5 rounded-xl text-sm font-medium border transition-colors"
-                style={{ color: "var(--text-muted)", borderColor: "var(--border)" }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-subtle)")}
-                onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-              >Annulla</motion.button>
+                style={{
+                  color: "var(--text-muted)",
+                  borderColor: "var(--border)",
+                }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.background = "var(--bg-subtle)")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.background = "transparent")
+                }
+              >
+                Annulla
+              </motion.button>
               <motion.button
-                whileTap={{ scale: 0.95 }} onClick={onConfirm} disabled={loading}
+                whileTap={{ scale: 0.95 }}
+                onClick={onConfirm}
+                disabled={loading}
                 className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-opacity"
-                style={{ background: "var(--destructive)", color: "white", opacity: loading ? 0.6 : 1 }}
-              >{loading ? "Eliminando…" : "Elimina"}</motion.button>
+                style={{
+                  background: "var(--destructive)",
+                  color: "white",
+                  opacity: loading ? 0.6 : 1,
+                }}
+              >
+                {loading ? "Eliminando…" : "Elimina"}
+              </motion.button>
             </div>
           </motion.div>
         </motion.div>
@@ -293,25 +538,34 @@ function DeleteConfirmDialog({ record, onConfirm, onCancel, loading }) {
   );
 }
 
-export default function TabTurni({ turni: tuttiTurni, dipendenti, cantieri, lavori, onAggiornaTurno, onRimuoviTurno }) {
-  const [selectedMese,   setSelectedMese]   = useState(() => {
+export default function TabTurni({
+  turni: tuttiTurni,
+  dipendenti,
+  cantieri,
+  lavori,
+  onAggiornaTurno,
+  onRimuoviTurno,
+}) {
+  const [selectedMese, setSelectedMese] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   });
-  const [filterOperaio,  setFilterOperaio]  = useState("all");
+  const [filterOperaio, setFilterOperaio] = useState("all");
   const [filterCantiere, setFilterCantiere] = useState("all");
-  const [filterLavoro,   setFilterLavoro]   = useState("all");
-  const [startDate,      setStartDate]      = useState("");
-  const [endDate,        setEndDate]        = useState("");
-  const [filtersOpen,    setFiltersOpen]    = useState(false);
-  const [view,           setView]           = useState("operaio");
-  const [editRecord,   setEditRecord]   = useState(null);
+  const [filterLavoro, setFilterLavoro] = useState("all");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [view, setView] = useState("operaio");
+  const [editRecord, setEditRecord] = useState(null);
   const [deleteRecord, setDeleteRecord] = useState(null);
-  const [deleting,     setDeleting]     = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
-    document.body.style.overflow = (editRecord || deleteRecord) ? "hidden" : "";
-    return () => { document.body.style.overflow = ""; };
+    document.body.style.overflow = editRecord || deleteRecord ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
   }, [editRecord, deleteRecord]);
 
   function handleEditSuccess(turnoAggiornato) {
@@ -333,25 +587,54 @@ export default function TabTurni({ turni: tuttiTurni, dipendenti, cantieri, lavo
     }
   }
 
-  const inputCls   = "rounded-lg px-3 py-2 text-sm outline-none border cursor-pointer";
-  const inputStyle = { background: "var(--bg-subtle)", borderColor: "var(--border)", color: "var(--text)" };
+  const inputCls =
+    "rounded-lg px-3 py-2 text-sm outline-none border cursor-pointer";
+  const inputStyle = {
+    background: "var(--bg-subtle)",
+    borderColor: "var(--border)",
+    color: "var(--text)",
+  };
 
   // Mesi disponibili derivati dai dati + mese corrente
   const now = new Date();
   const currentYM = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-  const ymSet = new Set(tuttiTurni.map((t) => t.data?.slice(0, 7)).filter(Boolean));
+  const ymSet = new Set(
+    tuttiTurni.map((t) => t.data?.slice(0, 7)).filter(Boolean),
+  );
   ymSet.add(currentYM);
   const mesiOptions = Array.from(ymSet).sort().reverse();
 
-  const filtered = useMemo(() => tuttiTurni.filter((t) => {
-    if (selectedMese !== "all" && !t.data?.startsWith(selectedMese)) return false;
-    if (startDate && t.data < startDate) return false;
-    if (endDate   && t.data > endDate)   return false;
-    if (filterOperaio  !== "all" && String(t.dipendente_id) !== filterOperaio)  return false;
-    if (filterCantiere !== "all" && String(t.cantiere_id)   !== filterCantiere) return false;
-    if (filterLavoro   !== "all" && String(t.lavoro_id)     !== filterLavoro)   return false;
-    return true;
-  }), [tuttiTurni, selectedMese, startDate, endDate, filterOperaio, filterCantiere, filterLavoro]);
+  const filtered = useMemo(
+    () =>
+      tuttiTurni.filter((t) => {
+        if (selectedMese !== "all" && !t.data?.startsWith(selectedMese))
+          return false;
+        if (startDate && t.data < startDate) return false;
+        if (endDate && t.data > endDate) return false;
+        if (
+          filterOperaio !== "all" &&
+          String(t.dipendente_id) !== filterOperaio
+        )
+          return false;
+        if (
+          filterCantiere !== "all" &&
+          String(t.cantiere_id) !== filterCantiere
+        )
+          return false;
+        if (filterLavoro !== "all" && String(t.lavoro_id) !== filterLavoro)
+          return false;
+        return true;
+      }),
+    [
+      tuttiTurni,
+      selectedMese,
+      startDate,
+      endDate,
+      filterOperaio,
+      filterCantiere,
+      filterLavoro,
+    ],
+  );
 
   const gruppiOperaio = useMemo(() => {
     const map = {};
@@ -359,11 +642,23 @@ export default function TabTurni({ turni: tuttiTurni, dipendenti, cantieri, lavo
       const id = String(t.dipendente_id);
       if (!map[id]) {
         const dip = dipendenti.find((d) => String(d.id) === id);
-        map[id] = { dipendente: dip || { id, nome: t.nome_operaio?.split(" ")[0] || "—", cognome: t.nome_operaio?.split(" ")[1] || "", ruolo: "" }, turni: [] };
+        map[id] = {
+          dipendente: dip || {
+            id,
+            nome: t.nome_operaio?.split(" ")[0] || "—",
+            cognome: t.nome_operaio?.split(" ")[1] || "",
+            ruolo: "",
+          },
+          turni: [],
+        };
       }
       map[id].turni.push(t);
     });
-    return Object.values(map).sort((a, b) => (a.dipendente.nome + a.dipendente.cognome).localeCompare(b.dipendente.nome + b.dipendente.cognome));
+    return Object.values(map).sort((a, b) =>
+      (a.dipendente.nome + a.dipendente.cognome).localeCompare(
+        b.dipendente.nome + b.dipendente.cognome,
+      ),
+    );
   }, [filtered, dipendenti]);
 
   const gruppiData = useMemo(() => {
@@ -375,105 +670,239 @@ export default function TabTurni({ turni: tuttiTurni, dipendenti, cantieri, lavo
       map[t.data].totMin += calcMin(t.inizio, t.fine);
     });
     return Object.values(map)
-      .map((g) => ({ ...g, records: g.records.sort((a, b) => (a.inizio || "").localeCompare(b.inizio || "")) }))
+      .map((g) => ({
+        ...g,
+        records: g.records.sort((a, b) =>
+          (a.inizio || "").localeCompare(b.inizio || ""),
+        ),
+      }))
       .sort((a, b) => (a.data > b.data ? -1 : 1));
   }, [filtered]);
 
-  const hasFilters  = selectedMese !== "all" || startDate || endDate || filterOperaio !== "all" || filterCantiere !== "all" || filterLavoro !== "all";
-  const activeCount = [selectedMese !== "all", startDate, endDate, filterOperaio !== "all", filterCantiere !== "all", filterLavoro !== "all"].filter(Boolean).length;
+  const hasFilters =
+    selectedMese !== "all" ||
+    startDate ||
+    endDate ||
+    filterOperaio !== "all" ||
+    filterCantiere !== "all" ||
+    filterLavoro !== "all";
+  const activeCount = [
+    selectedMese !== "all",
+    startDate,
+    endDate,
+    filterOperaio !== "all",
+    filterCantiere !== "all",
+    filterLavoro !== "all",
+  ].filter(Boolean).length;
 
   function resetFilters() {
     setSelectedMese("all");
-    setStartDate(""); setEndDate("");
-    setFilterOperaio("all"); setFilterCantiere("all"); setFilterLavoro("all");
+    setStartDate("");
+    setEndDate("");
+    setFilterOperaio("all");
+    setFilterCantiere("all");
+    setFilterLavoro("all");
   }
 
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <h2 className="text-lg font-bold" style={{ color: "var(--text)" }}>Turni</h2>
-        <p className="text-sm mt-0.5" style={{ color: "var(--text-muted)" }}>{tuttiTurni.length} turni totali</p>
+        <h2 className="text-lg font-bold" style={{ color: "var(--text)" }}>
+          Turni
+        </h2>
+        <p className="text-sm mt-0.5" style={{ color: "var(--text-muted)" }}>
+          {tuttiTurni.length} turni totali
+        </p>
       </div>
 
       {/* Filtri */}
-      <div className="rounded-xl border overflow-hidden" style={{ background: "var(--bg-card)", borderColor: "var(--border)" }}>
+      <div
+        className="rounded-xl border overflow-hidden"
+        style={{ background: "var(--bg-card)", borderColor: "var(--border)" }}
+      >
         <motion.button
           whileTap={{ scale: 0.98 }}
           onClick={() => setFiltersOpen((v) => !v)}
           className="w-full flex items-center justify-between px-4 py-3 transition-colors"
           style={{ color: "var(--text)" }}
-          onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-subtle)")}
-          onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+          onMouseEnter={(e) =>
+            (e.currentTarget.style.background = "var(--bg-subtle)")
+          }
+          onMouseLeave={(e) =>
+            (e.currentTarget.style.background = "transparent")
+          }
         >
           <div className="flex items-center gap-2">
-            <SlidersHorizontal className="h-4 w-4" style={{ color: "var(--text-muted)" }} />
+            <SlidersHorizontal
+              className="h-4 w-4"
+              style={{ color: "var(--text-muted)" }}
+            />
             <span className="text-sm font-medium">Filtri</span>
             {activeCount > 0 && (
-              <span className="text-[11px] font-bold px-1.5 py-0.5 rounded-full" style={{ background: "var(--primary)", color: "white" }}>{activeCount}</span>
+              <span
+                className="text-[11px] font-bold px-1.5 py-0.5 rounded-full"
+                style={{ background: "var(--primary)", color: "white" }}
+              >
+                {activeCount}
+              </span>
             )}
           </div>
-          <motion.div animate={{ rotate: filtersOpen ? 0 : -90 }} transition={{ duration: 0.2 }}>
-            <ChevronUp className="h-4 w-4" style={{ color: "var(--text-faint)" }} />
+          <motion.div
+            animate={{ rotate: filtersOpen ? 0 : -90 }}
+            transition={{ duration: 0.2 }}
+          >
+            <ChevronUp
+              className="h-4 w-4"
+              style={{ color: "var(--text-faint)" }}
+            />
           </motion.div>
         </motion.button>
 
         <AnimatePresence initial={false}>
           {filtersOpen && (
             <motion.div
-              initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.24, ease: [0.4, 0, 0.2, 1] }} style={{ overflow: "hidden" }}
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.24, ease: [0.4, 0, 0.2, 1] }}
+              style={{ overflow: "hidden" }}
             >
-              <div className="border-t px-4 pb-4 pt-3 flex flex-col gap-3" style={{ borderColor: "var(--border)" }}>
+              <div
+                className="border-t px-4 pb-4 pt-3 flex flex-col gap-3"
+                style={{ borderColor: "var(--border)" }}
+              >
                 <div className="flex flex-col gap-1">
-                  <label className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>Mese</label>
-                  <select value={selectedMese} onChange={(e) => setSelectedMese(e.target.value)}
-                    className={inputCls} style={inputStyle}
-                    onFocus={(e) => (e.target.style.borderColor = "var(--primary)")}
-                    onBlur={(e)  => (e.target.style.borderColor = "var(--border)")}>
+                  <label
+                    className="text-xs font-medium"
+                    style={{ color: "var(--text-muted)" }}
+                  >
+                    Mese
+                  </label>
+                  <select
+                    value={selectedMese}
+                    onChange={(e) => setSelectedMese(e.target.value)}
+                    className={inputCls}
+                    style={inputStyle}
+                    onFocus={(e) =>
+                      (e.target.style.borderColor = "var(--primary)")
+                    }
+                    onBlur={(e) =>
+                      (e.target.style.borderColor = "var(--border)")
+                    }
+                  >
                     <option value="all">Tutti i mesi</option>
                     {mesiOptions.map((ym) => (
-                      <option key={ym} value={ym}>{fmtMese(ym)}</option>
+                      <option key={ym} value={ym}>
+                        {fmtMese(ym)}
+                      </option>
                     ))}
                   </select>
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                   {[
-                    { label: "Operaio",     value: filterOperaio,  set: setFilterOperaio,  options: dipendenti.map((d) => ({ value: String(d.id), label: `${d.nome} ${d.cognome}` })) },
-                    { label: "Cantiere",    value: filterCantiere, set: setFilterCantiere, options: cantieri.map((c) => ({ value: String(c.id), label: c.cantiere })) },
-                    { label: "Tipo Lavoro", value: filterLavoro,   set: setFilterLavoro,   options: lavori.map((l) => ({ value: String(l.id), label: l.lavoro })) },
+                    {
+                      label: "Operaio",
+                      value: filterOperaio,
+                      set: setFilterOperaio,
+                      options: dipendenti.map((d) => ({
+                        value: String(d.id),
+                        label: `${d.nome} ${d.cognome}`,
+                      })),
+                    },
+                    {
+                      label: "Cantiere",
+                      value: filterCantiere,
+                      set: setFilterCantiere,
+                      options: cantieri.map((c) => ({
+                        value: String(c.id),
+                        label: c.cantiere,
+                      })),
+                    },
+                    {
+                      label: "Tipo Lavoro",
+                      value: filterLavoro,
+                      set: setFilterLavoro,
+                      options: lavori.map((l) => ({
+                        value: String(l.id),
+                        label: l.lavoro,
+                      })),
+                    },
                   ].map(({ label, value, set, options }) => (
                     <div key={label} className="flex flex-col gap-1">
-                      <label className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>{label}</label>
-                      <select value={value} onChange={(e) => set(e.target.value)} className={inputCls} style={inputStyle}
-                        onFocus={(e) => (e.target.style.borderColor = "var(--primary)")}
-                        onBlur={(e)  => (e.target.style.borderColor = "var(--border)")}>
+                      <label
+                        className="text-xs font-medium"
+                        style={{ color: "var(--text-muted)" }}
+                      >
+                        {label}
+                      </label>
+                      <select
+                        value={value}
+                        onChange={(e) => set(e.target.value)}
+                        className={inputCls}
+                        style={inputStyle}
+                        onFocus={(e) =>
+                          (e.target.style.borderColor = "var(--primary)")
+                        }
+                        onBlur={(e) =>
+                          (e.target.style.borderColor = "var(--border)")
+                        }
+                      >
                         <option value="all">Tutti</option>
-                        {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                        {options.map((o) => (
+                          <option key={o.value} value={o.value}>
+                            {o.label}
+                          </option>
+                        ))}
                       </select>
                     </div>
                   ))}
                   {[
                     { label: "Dal", value: startDate, set: setStartDate },
-                    { label: "Al",  value: endDate,   set: setEndDate   },
+                    { label: "Al", value: endDate, set: setEndDate },
                   ].map(({ label, value, set }) => (
                     <div key={label} className="flex flex-col gap-1">
-                      <label className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>{label}</label>
-                      <input type="date" value={value} onChange={(e) => set(e.target.value)}
+                      <label
+                        className="text-xs font-medium"
+                        style={{ color: "var(--text-muted)" }}
+                      >
+                        {label}
+                      </label>
+                      <input
+                        type="date"
+                        value={value}
+                        onChange={(e) => set(e.target.value)}
                         className="rounded-lg px-3 py-2 text-sm outline-none border appearance-none min-w-0"
                         style={inputStyle}
-                        onFocus={(e) => (e.target.style.borderColor = "var(--primary)")}
-                        onBlur={(e)  => (e.target.style.borderColor = "var(--border)")} />
+                        onFocus={(e) =>
+                          (e.target.style.borderColor = "var(--primary)")
+                        }
+                        onBlur={(e) =>
+                          (e.target.style.borderColor = "var(--border)")
+                        }
+                      />
                     </div>
                   ))}
                 </div>
 
                 {hasFilters && (
-                  <motion.button whileTap={{ scale: 0.94 }} onClick={resetFilters}
+                  <motion.button
+                    whileTap={{ scale: 0.94 }}
+                    onClick={resetFilters}
                     className="self-start text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors"
-                    style={{ color: "var(--text-muted)", borderColor: "var(--border)" }}
-                    onMouseEnter={(e) => { e.currentTarget.style.color = "var(--destructive)"; e.currentTarget.style.borderColor = "var(--destructive)"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-muted)"; e.currentTarget.style.borderColor = "var(--border)"; }}>
+                    style={{
+                      color: "var(--text-muted)",
+                      borderColor: "var(--border)",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = "var(--destructive)";
+                      e.currentTarget.style.borderColor = "var(--destructive)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = "var(--text-muted)";
+                      e.currentTarget.style.borderColor = "var(--border)";
+                    }}
+                  >
                     Azzera filtri ✕
                   </motion.button>
                 )}
@@ -485,12 +914,27 @@ export default function TabTurni({ turni: tuttiTurni, dipendenti, cantieri, lavo
 
       {/* Toggle vista */}
       <div className="flex items-center justify-between">
-        <span className="text-sm" style={{ color: "var(--text-muted)" }}>{filtered.length} {filtered.length === 1 ? "turno" : "turni"}</span>
-        <div className="flex rounded-lg overflow-hidden border" style={{ borderColor: "var(--border)" }}>
-          {[{ id: "operaio", label: "Per operaio" }, { id: "data", label: "Per data" }].map(({ id, label }) => (
-            <motion.button key={id} whileTap={{ scale: 0.96 }} onClick={() => setView(id)}
+        <span className="text-sm" style={{ color: "var(--text-muted)" }}>
+          {filtered.length} {filtered.length === 1 ? "turno" : "turni"}
+        </span>
+        <div
+          className="flex rounded-lg overflow-hidden border"
+          style={{ borderColor: "var(--border)" }}
+        >
+          {[
+            { id: "operaio", label: "Per operaio" },
+            { id: "data", label: "Per data" },
+          ].map(({ id, label }) => (
+            <motion.button
+              key={id}
+              whileTap={{ scale: 0.96 }}
+              onClick={() => setView(id)}
               className="px-3 py-1.5 text-xs font-medium transition-colors"
-              style={{ background: view === id ? "var(--primary)" : "transparent", color: view === id ? "white" : "var(--text-muted)" }}>
+              style={{
+                background: view === id ? "var(--primary)" : "transparent",
+                color: view === id ? "white" : "var(--text-muted)",
+              }}
+            >
               {label}
             </motion.button>
           ))}
@@ -500,30 +944,90 @@ export default function TabTurni({ turni: tuttiTurni, dipendenti, cantieri, lavo
       {/* Lista */}
       <AnimatePresence mode="wait">
         {filtered.length === 0 ? (
-          <motion.div key="empty" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+          <motion.div
+            key="empty"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
             className="rounded-xl border flex flex-col items-center justify-center py-16 gap-3"
-            style={{ background: "var(--bg-card)", borderColor: "var(--border)" }}>
-            <FileSearch className="h-10 w-10" style={{ color: "var(--text-faint)" }} />
-            <p className="font-medium text-sm" style={{ color: "var(--text)" }}>Nessun turno trovato</p>
-            <p className="text-xs" style={{ color: "var(--text-muted)" }}>{hasFilters ? "Prova a modificare i filtri" : "Nessun dato disponibile"}</p>
+            style={{
+              background: "var(--bg-card)",
+              borderColor: "var(--border)",
+            }}
+          >
+            <FileSearch
+              className="h-10 w-10"
+              style={{ color: "var(--text-faint)" }}
+            />
+            <p className="font-medium text-sm" style={{ color: "var(--text)" }}>
+              Nessun turno trovato
+            </p>
+            <p className="text-xs" style={{ color: "var(--text-muted)" }}>
+              {hasFilters
+                ? "Prova a modificare i filtri"
+                : "Nessun dato disponibile"}
+            </p>
           </motion.div>
         ) : view === "operaio" ? (
-          <motion.div key="by-operaio" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }} className="flex flex-col gap-3">
+          <motion.div
+            key="by-operaio"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18 }}
+            className="flex flex-col gap-3"
+          >
             {gruppiOperaio.map(({ dipendente, turni }, i) => (
-              <OperaioCard key={dipendente.id} dipendente={dipendente} turni={turni} onEdit={setEditRecord} onDelete={setDeleteRecord} index={i} />
+              <OperaioCard
+                key={dipendente.id}
+                dipendente={dipendente}
+                turni={turni}
+                onEdit={setEditRecord}
+                onDelete={setDeleteRecord}
+                index={i}
+              />
             ))}
           </motion.div>
         ) : (
-          <motion.div key="by-data" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }} className="flex flex-col gap-6">
+          <motion.div
+            key="by-data"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18 }}
+            className="flex flex-col gap-6"
+          >
             {gruppiData.map(({ data, records, totMin }) => (
               <div key={data}>
                 <div className="flex items-center gap-3 mb-2 px-1">
-                  <span className="text-xs font-semibold capitalize" style={{ color: "var(--text-muted)" }}>{formatHeader(data)}</span>
-                  <div className="flex-1 h-px" style={{ background: "var(--border)" }} />
-                  <span className="text-[11px] font-bold px-2 py-0.5 rounded-full" style={{ background: "var(--primary)", color: "white" }}>{fmtOre(totMin)}</span>
+                  <span
+                    className="text-xs font-semibold capitalize"
+                    style={{ color: "var(--text-muted)" }}
+                  >
+                    {formatHeader(data)}
+                  </span>
+                  <div
+                    className="flex-1 h-px"
+                    style={{ background: "var(--border)" }}
+                  />
+                  <span
+                    className="text-[11px] font-bold px-2 py-0.5 rounded-full"
+                    style={{ background: "var(--primary)", color: "white" }}
+                  >
+                    {fmtOre(totMin)}
+                  </span>
                 </div>
                 <div className="flex flex-col gap-2">
-                  {records.map((r, i) => <TurnoCard key={r.id} record={r} showOperaio onEdit={setEditRecord} onDelete={setDeleteRecord} index={i} />)}
+                  {records.map((r, i) => (
+                    <TurnoCard
+                      key={r.id}
+                      record={r}
+                      showOperaio
+                      onEdit={setEditRecord}
+                      onDelete={setDeleteRecord}
+                      index={i}
+                    />
+                  ))}
                 </div>
               </div>
             ))}
