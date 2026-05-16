@@ -241,7 +241,7 @@ function EditTurnoDialog({ record, onSuccess, onCancel }) {
             background: "rgba(0,0,0,0.6)",
             backdropFilter: "blur(4px)",
             paddingBottom:
-              "calc(max(16px, env(safe-area-inset-bottom)) + 16px)",
+              "calc(max(16px, env(safe-area-inset-bottom)) + 64px)",
           }}
           onClick={onCancel}
         >
