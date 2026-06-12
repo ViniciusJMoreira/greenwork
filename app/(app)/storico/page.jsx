@@ -286,6 +286,7 @@ function EditTurnoDialog({ record, onSuccess, onCancel }) {
                 turno={record}
                 onSuccess={onSuccess}
                 onChiudi={onCancel}
+                bloccaData
               />
             </div>
           </motion.div>

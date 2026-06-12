@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useForm, Controller, useWatch } from "react-hook-form";
-import { calcMin, fmtOre, fmtData } from "@/lib/utils";
+import { calcMin, fmtOre, fmtData, getMeseLimiti } from "@/lib/utils";
 import { useApp } from "@/components/app-context";
 import { updateTurno } from "@/lib/actions";
 import TimeSelect from "./time-select";
@@ -118,11 +118,12 @@ function ConflittoPannello({ conflitto, onClose }) {
   );
 }
 
-function FormModifica({ turno, onSuccess, onChiudi }) {
+function FormModifica({ turno, onSuccess, onChiudi, bloccaData = false }) {
   const { cantieri, lavori, macchinari } = useApp();
 
   const [saving, setSaving] = useState(false);
   const [conflitto, setConflitto] = useState(null);
+  const { meseMin, meseMax } = getMeseLimiti();
   const [usaMacchinario, setUsaMacchinario] = useState(!!turno.mezzo_id);
   const [usaKm, setUsaKm] = useState(!!turno.km_totale);
 
@@ -253,6 +254,8 @@ function FormModifica({ turno, onSuccess, onChiudi }) {
               <input
                 type="date"
                 {...register("data")}
+                min={bloccaData ? meseMin : undefined}
+                max={bloccaData ? meseMax : undefined}
                 className={inputCls + " appearance-none min-w-0"}
               />
             </div>

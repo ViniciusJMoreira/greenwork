@@ -3,13 +3,15 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Building2, Users, Hammer, Tractor, ChevronDown,
-  BriefcaseMedical, Pencil, X, Plus, Trash2,
+  BriefcaseMedical, Pencil, X, Plus, Archive, RotateCcw,
 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import {
   insertCantiere, insertDipendente, insertLavoro, insertMacchinario,
   updateCantiere, updateDipendente, updateLavoro, updateMacchinario,
-  deleteCantiere, deleteDipendente, deleteLavoro, deleteMacchinario,
+  archiviaCantiere, archiviaDipendente, archiviaLavoro, archiviaMacchinario,
+  ripristinaCantiere, ripristinaDipendente, ripristinaLavoro, ripristinaMacchinario,
+  getArchiviatiCantieri, getArchiviatiDipendenti, getArchiviatiLavori, getArchiviatiMacchinari,
 } from "@/lib/actions";
 import toast from "react-hot-toast";
 import { Spinner } from "@/components/ui/spinner";
@@ -88,51 +90,51 @@ function EditToggleBtn({ isEditing, onClick }) {
   );
 }
 
-// Doppio click: prima conferma (rosso), poi elimina
-function DeleteBtn({ onDelete }) {
+// Doppio click: prima conferma (arancio), poi archivia
+function ArchiviaBtn({ onArchivia }) {
   const [confirm, setConfirm] = useState(false);
-  const [deleting, setDeleting] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   async function handleClick() {
     if (!confirm) { setConfirm(true); return; }
-    setDeleting(true);
-    await onDelete();
-    setDeleting(false);
+    setLoading(true);
+    await onArchivia();
+    setLoading(false);
   }
-
-  // Reset conferma se si allontana il mouse
-  function handleBlur() { setConfirm(false); }
 
   return (
     <button
       type="button"
       onClick={handleClick}
-      onBlur={handleBlur}
-      disabled={deleting}
+      onBlur={() => setConfirm(false)}
+      disabled={loading}
       className="p-1.5 rounded-lg shrink-0 transition-all text-xs font-semibold flex items-center gap-1"
       style={{
-        color: confirm ? "white" : "#ef4444",
-        background: confirm ? "#ef4444" : "transparent",
-        border: `1px solid ${confirm ? "#ef4444" : "#ef444433"}`,
-        minWidth: confirm ? 72 : undefined,
+        color: confirm ? "white" : "#f59e0b",
+        background: confirm ? "#f59e0b" : "transparent",
+        border: `1px solid ${confirm ? "#f59e0b" : "#f59e0b44"}`,
+        minWidth: confirm ? 76 : undefined,
       }}
     >
-      {deleting ? <Spinner /> : <Trash2 className="h-3.5 w-3.5" />}
-      {confirm && !deleting && <span>Conferma</span>}
+      {loading ? <Spinner /> : <Archive className="h-3.5 w-3.5" />}
+      {confirm && !loading && <span>Archivia</span>}
     </button>
   );
 }
 
-function Switch({ checked, onChange }) {
+// Bottone ripristino per i record archiviati
+function RipristinaBtn({ onClick, loading }) {
   return (
-    <motion.button type="button" onClick={() => onChange(!checked)} whileTap={{ scale: 0.9 }}
-      className="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-200"
-      style={{ background: checked ? "var(--primary)" : "var(--border-strong)" }}
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={loading}
+      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-colors"
+      style={{ color: "var(--primary)", background: "var(--primary-faint)", border: "1px solid var(--primary-faint)" }}
     >
-      <motion.span animate={{ x: checked ? 22 : 2 }} transition={{ type: "spring", stiffness: 500, damping: 26 }}
-        className="inline-block h-4 w-4 rounded-full bg-white shadow"
-      />
-    </motion.button>
+      {loading ? <Spinner /> : <RotateCcw className="h-3 w-3" />}
+      Ripristina
+    </button>
   );
 }
 
@@ -149,9 +151,67 @@ function AddRowBtn({ onClick }) {
   );
 }
 
+// Sezione archiviati espandibile con lazy load
+function SezioneArchiviati({ fetchFn, renderRow }) {
+  const [open, setOpen] = useState(false);
+  const [items, setItems] = useState(null); // null = non ancora caricati
+  const [loading, setLoading] = useState(false);
+
+  async function toggle() {
+    if (!open && items === null) {
+      setLoading(true);
+      const data = await fetchFn();
+      setItems(data);
+      setLoading(false);
+    }
+    setOpen((v) => !v);
+  }
+
+  return (
+    <div className="border-t" style={{ borderColor: "var(--border)" }}>
+      <button
+        type="button"
+        onClick={toggle}
+        className="w-full flex items-center justify-between px-4 py-2.5 text-xs font-medium transition-colors"
+        style={{ color: "var(--text-faint)" }}
+        onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-subtle)")}
+        onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+      >
+        <span className="flex items-center gap-1.5">
+          <Archive className="h-3 w-3" />
+          {open ? "Nascondi archiviati" : "Mostra archiviati"}
+          {items !== null && <span className="font-mono">({items.length})</span>}
+        </span>
+        {loading && <Spinner />}
+        {!loading && <motion.div animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.2 }}>
+          <ChevronDown className="h-3 w-3" />
+        </motion.div>}
+      </button>
+      <AnimatePresence initial={false}>
+        {open && items !== null && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }} style={{ overflow: "hidden" }}
+          >
+            <div className="divide-y" style={{ borderColor: "var(--border)", background: "var(--bg-subtle)" }}>
+              {items.length === 0 ? (
+                <p className="px-4 py-3 text-xs" style={{ color: "var(--text-faint)" }}>Nessun elemento archiviato</p>
+              ) : (
+                items.map((item) => renderRow(item, (ripristinato) => {
+                  setItems((prev) => prev.filter((i) => i.id !== ripristinato.id));
+                }))
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 // ── DIPENDENTI ────────────────────────────────────────────────────────────────
 
-function DipendenteRow({ item, onSaved, onDeleted }) {
+function DipendenteRow({ item, onSaved, onArchiviato }) {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const { register, handleSubmit, formState: { isValid } } = useForm({
@@ -181,16 +241,11 @@ function DipendenteRow({ item, onSaved, onDeleted }) {
           </p>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
-          <DeleteBtn onDelete={async () => {
-            const res = await deleteDipendente(item.id);
-            if (!res.success) {
-              const msg = res.error?.includes("foreign key")
-                ? "Impossibile eliminare: ci sono turni associati a questo dipendente"
-                : (res.error ?? "Errore eliminazione");
-              return toast.error(msg, { duration: 4000 });
-            }
-            toast.success("Dipendente eliminato");
-            onDeleted(item.id);
+          <ArchiviaBtn onArchivia={async () => {
+            const res = await archiviaDipendente(item.id);
+            if (!res.success) return toast.error(res.error ?? "Errore archiviazione");
+            toast.success("Dipendente archiviato");
+            onArchiviato(item.id);
           }} />
           <EditToggleBtn isEditing={editing} onClick={() => setEditing((v) => !v)} />
         </div>
@@ -224,6 +279,26 @@ function DipendenteRow({ item, onSaved, onDeleted }) {
           </motion.form>
         )}
       </AnimatePresence>
+    </div>
+  );
+}
+
+function DipendenteArchivatoRow({ item, onRipristinato }) {
+  const [loading, setLoading] = useState(false);
+  return (
+    <div className="flex items-center justify-between px-4 py-3 gap-3">
+      <div className="min-w-0 flex-1">
+        <p className="text-sm truncate" style={{ color: "var(--text-muted)" }}>{item.nome} {item.cognome}</p>
+        <p className="text-xs" style={{ color: "var(--text-faint)" }}>PIN: <span className="font-mono">{item.pin}</span> · {item.ruolo}</p>
+      </div>
+      <RipristinaBtn loading={loading} onClick={async () => {
+        setLoading(true);
+        const res = await ripristinaDipendente(item.id);
+        setLoading(false);
+        if (!res.success) return toast.error(res.error ?? "Errore ripristino");
+        toast.success("Dipendente ripristinato");
+        onRipristinato(item);
+      }} />
     </div>
   );
 }
@@ -274,21 +349,30 @@ function SezioneDipendenti({ dipendenti: initData }) {
   const [items, setItems] = useState(initData ?? []);
   function onSaved(updated) { setItems((prev) => prev.map((i) => (i.id === updated.id ? updated : i))); }
   function onAdded(item) { setItems((prev) => [...prev, item]); }
-  function onDeleted(id) { setItems((prev) => prev.filter((i) => i.id !== id)); }
+  function onArchiviato(id) { setItems((prev) => prev.filter((i) => i.id !== id)); }
 
   return (
     <SezioneConLista label="Dipendenti" icon={Users} count={items.length}>
       <DipendenteAddForm onAdded={onAdded} />
       {items.map((item) => (
-        <DipendenteRow key={item.id} item={item} onSaved={onSaved} onDeleted={onDeleted} />
+        <DipendenteRow key={item.id} item={item} onSaved={onSaved} onArchiviato={onArchiviato} />
       ))}
+      <SezioneArchiviati
+        fetchFn={getArchiviatiDipendenti}
+        renderRow={(item, onRipristinato) => (
+          <DipendenteArchivatoRow key={item.id} item={item} onRipristinato={(r) => {
+            onRipristinato(r);
+            setItems((prev) => [...prev, r]);
+          }} />
+        )}
+      />
     </SezioneConLista>
   );
 }
 
 // ── CANTIERI ──────────────────────────────────────────────────────────────────
 
-function CantiereRow({ item, onSaved, onDeleted }) {
+function CantiereRow({ item, onSaved, onArchiviato }) {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [isAssenza, setIsAssenza] = useState(!!item.isAssenza);
@@ -318,16 +402,11 @@ function CantiereRow({ item, onSaved, onDeleted }) {
           </p>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
-          <DeleteBtn onDelete={async () => {
-            const res = await deleteCantiere(item.id);
-            if (!res.success) {
-              const msg = res.error?.includes("foreign key")
-                ? "Impossibile eliminare: ci sono turni associati a questo cantiere"
-                : (res.error ?? "Errore eliminazione");
-              return toast.error(msg, { duration: 4000 });
-            }
-            toast.success("Cantiere eliminato");
-            onDeleted(item.id);
+          <ArchiviaBtn onArchivia={async () => {
+            const res = await archiviaCantiere(item.id);
+            if (!res.success) return toast.error(res.error ?? "Errore archiviazione");
+            toast.success("Cantiere archiviato");
+            onArchiviato(item.id);
           }} />
           <EditToggleBtn isEditing={editing} onClick={() => setEditing((v) => !v)} />
         </div>
@@ -361,6 +440,26 @@ function CantiereRow({ item, onSaved, onDeleted }) {
           </motion.form>
         )}
       </AnimatePresence>
+    </div>
+  );
+}
+
+function CantiereArchivatoRow({ item, onRipristinato }) {
+  const [loading, setLoading] = useState(false);
+  return (
+    <div className="flex items-center justify-between px-4 py-3 gap-3">
+      <div className="min-w-0 flex-1">
+        <p className="text-sm truncate" style={{ color: "var(--text-muted)" }}>{item.cantiere}</p>
+        <p className="text-xs font-mono" style={{ color: "var(--text-faint)" }}>{item.cod_cantiere}</p>
+      </div>
+      <RipristinaBtn loading={loading} onClick={async () => {
+        setLoading(true);
+        const res = await ripristinaCantiere(item.id);
+        setLoading(false);
+        if (!res.success) return toast.error(res.error ?? "Errore ripristino");
+        toast.success("Cantiere ripristinato");
+        onRipristinato(item);
+      }} />
     </div>
   );
 }
@@ -412,21 +511,30 @@ function SezioneCantieri({ cantieri: initData }) {
   const [items, setItems] = useState(initData ?? []);
   function onSaved(updated) { setItems((prev) => prev.map((i) => (i.id === updated.id ? updated : i))); }
   function onAdded(item) { setItems((prev) => [...prev, item]); }
-  function onDeleted(id) { setItems((prev) => prev.filter((i) => i.id !== id)); }
+  function onArchiviato(id) { setItems((prev) => prev.filter((i) => i.id !== id)); }
 
   return (
     <SezioneConLista label="Cantieri" icon={Building2} count={items.length}>
       <CantiereAddForm onAdded={onAdded} />
       {items.map((item) => (
-        <CantiereRow key={item.id} item={item} onSaved={onSaved} onDeleted={onDeleted} />
+        <CantiereRow key={item.id} item={item} onSaved={onSaved} onArchiviato={onArchiviato} />
       ))}
+      <SezioneArchiviati
+        fetchFn={getArchiviatiCantieri}
+        renderRow={(item, onRipristinato) => (
+          <CantiereArchivatoRow key={item.id} item={item} onRipristinato={(r) => {
+            onRipristinato(r);
+            setItems((prev) => [...prev, r]);
+          }} />
+        )}
+      />
     </SezioneConLista>
   );
 }
 
 // ── LAVORI ────────────────────────────────────────────────────────────────────
 
-function LavoroRow({ item, onSaved, onDeleted }) {
+function LavoroRow({ item, onSaved, onArchiviato }) {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const { register, handleSubmit, formState: { isValid } } = useForm({
@@ -449,11 +557,11 @@ function LavoroRow({ item, onSaved, onDeleted }) {
       <div className="flex items-center justify-between px-4 py-3 gap-3">
         <p className="text-sm flex-1 truncate" style={{ color: "var(--text)" }}>{item.lavoro}</p>
         <div className="flex items-center gap-1.5 shrink-0">
-          <DeleteBtn onDelete={async () => {
-            const res = await deleteLavoro(item.id);
-            if (!res.success) return toast.error(res.error ?? "Errore");
-            toast.success("Lavoro eliminato");
-            onDeleted(item.id);
+          <ArchiviaBtn onArchivia={async () => {
+            const res = await archiviaLavoro(item.id);
+            if (!res.success) return toast.error(res.error ?? "Errore archiviazione");
+            toast.success("Tipo lavoro archiviato");
+            onArchiviato(item.id);
           }} />
           <EditToggleBtn isEditing={editing} onClick={() => setEditing((v) => !v)} />
         </div>
@@ -476,6 +584,23 @@ function LavoroRow({ item, onSaved, onDeleted }) {
           </motion.form>
         )}
       </AnimatePresence>
+    </div>
+  );
+}
+
+function LavoroArchivatoRow({ item, onRipristinato }) {
+  const [loading, setLoading] = useState(false);
+  return (
+    <div className="flex items-center justify-between px-4 py-3 gap-3">
+      <p className="text-sm flex-1 truncate" style={{ color: "var(--text-muted)" }}>{item.lavoro}</p>
+      <RipristinaBtn loading={loading} onClick={async () => {
+        setLoading(true);
+        const res = await ripristinaLavoro(item.id);
+        setLoading(false);
+        if (!res.success) return toast.error(res.error ?? "Errore ripristino");
+        toast.success("Tipo lavoro ripristinato");
+        onRipristinato(item);
+      }} />
     </div>
   );
 }
@@ -514,21 +639,30 @@ function SezioneLavori({ lavori: initData }) {
   const [items, setItems] = useState(initData ?? []);
   function onSaved(updated) { setItems((prev) => prev.map((i) => (i.id === updated.id ? updated : i))); }
   function onAdded(item) { setItems((prev) => [...prev, item]); }
-  function onDeleted(id) { setItems((prev) => prev.filter((i) => i.id !== id)); }
+  function onArchiviato(id) { setItems((prev) => prev.filter((i) => i.id !== id)); }
 
   return (
     <SezioneConLista label="Tipi di Lavoro" icon={Hammer} count={items.length}>
       <LavoroAddForm onAdded={onAdded} />
       {items.map((item) => (
-        <LavoroRow key={item.id} item={item} onSaved={onSaved} onDeleted={onDeleted} />
+        <LavoroRow key={item.id} item={item} onSaved={onSaved} onArchiviato={onArchiviato} />
       ))}
+      <SezioneArchiviati
+        fetchFn={getArchiviatiLavori}
+        renderRow={(item, onRipristinato) => (
+          <LavoroArchivatoRow key={item.id} item={item} onRipristinato={(r) => {
+            onRipristinato(r);
+            setItems((prev) => [...prev, r]);
+          }} />
+        )}
+      />
     </SezioneConLista>
   );
 }
 
 // ── MACCHINARI ────────────────────────────────────────────────────────────────
 
-function MacchinarioRow({ item, onSaved, onDeleted }) {
+function MacchinarioRow({ item, onSaved, onArchiviato }) {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const { register, handleSubmit, formState: { isValid } } = useForm({
@@ -554,11 +688,11 @@ function MacchinarioRow({ item, onSaved, onDeleted }) {
           <p className="text-xs font-mono" style={{ color: "var(--text-muted)" }}>{item.cod_mezzo}</p>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
-          <DeleteBtn onDelete={async () => {
-            const res = await deleteMacchinario(item.id);
-            if (!res.success) return toast.error(res.error ?? "Errore");
-            toast.success("Macchinario eliminato");
-            onDeleted(item.id);
+          <ArchiviaBtn onArchivia={async () => {
+            const res = await archiviaMacchinario(item.id);
+            if (!res.success) return toast.error(res.error ?? "Errore archiviazione");
+            toast.success("Macchinario archiviato");
+            onArchiviato(item.id);
           }} />
           <EditToggleBtn isEditing={editing} onClick={() => setEditing((v) => !v)} />
         </div>
@@ -584,6 +718,26 @@ function MacchinarioRow({ item, onSaved, onDeleted }) {
           </motion.form>
         )}
       </AnimatePresence>
+    </div>
+  );
+}
+
+function MacchinarioArchivatoRow({ item, onRipristinato }) {
+  const [loading, setLoading] = useState(false);
+  return (
+    <div className="flex items-center justify-between px-4 py-3 gap-3">
+      <div className="min-w-0 flex-1">
+        <p className="text-sm truncate" style={{ color: "var(--text-muted)" }}>{item.mezzo}</p>
+        <p className="text-xs font-mono" style={{ color: "var(--text-faint)" }}>{item.cod_mezzo}</p>
+      </div>
+      <RipristinaBtn loading={loading} onClick={async () => {
+        setLoading(true);
+        const res = await ripristinaMacchinario(item.id);
+        setLoading(false);
+        if (!res.success) return toast.error(res.error ?? "Errore ripristino");
+        toast.success("Macchinario ripristinato");
+        onRipristinato(item);
+      }} />
     </div>
   );
 }
@@ -625,15 +779,39 @@ function SezioneMacchinari({ macchinari: initData }) {
   const [items, setItems] = useState(initData ?? []);
   function onSaved(updated) { setItems((prev) => prev.map((i) => (i.id === updated.id ? updated : i))); }
   function onAdded(item) { setItems((prev) => [...prev, item]); }
-  function onDeleted(id) { setItems((prev) => prev.filter((i) => i.id !== id)); }
+  function onArchiviato(id) { setItems((prev) => prev.filter((i) => i.id !== id)); }
 
   return (
     <SezioneConLista label="Macchinari" icon={Tractor} count={items.length}>
       <MacchinarioAddForm onAdded={onAdded} />
       {items.map((item) => (
-        <MacchinarioRow key={item.id} item={item} onSaved={onSaved} onDeleted={onDeleted} />
+        <MacchinarioRow key={item.id} item={item} onSaved={onSaved} onArchiviato={onArchiviato} />
       ))}
+      <SezioneArchiviati
+        fetchFn={getArchiviatiMacchinari}
+        renderRow={(item, onRipristinato) => (
+          <MacchinarioArchivatoRow key={item.id} item={item} onRipristinato={(r) => {
+            onRipristinato(r);
+            setItems((prev) => [...prev, r]);
+          }} />
+        )}
+      />
     </SezioneConLista>
+  );
+}
+
+// ── Switch (usato in CantiereRow) ─────────────────────────────────────────────
+
+function Switch({ checked, onChange }) {
+  return (
+    <motion.button type="button" onClick={() => onChange(!checked)} whileTap={{ scale: 0.9 }}
+      className="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-200"
+      style={{ background: checked ? "var(--primary)" : "var(--border-strong)" }}
+    >
+      <motion.span animate={{ x: checked ? 22 : 2 }} transition={{ type: "spring", stiffness: 500, damping: 26 }}
+        className="inline-block h-4 w-4 rounded-full bg-white shadow"
+      />
+    </motion.button>
   );
 }
 
