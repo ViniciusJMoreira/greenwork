@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useForm, Controller, useWatch } from "react-hook-form";
-import { calcMin, fmtOre, fmtData } from "@/lib/utils";
+import { calcMin, fmtOre, fmtData, getMeseLimiti } from "@/lib/utils";
 import { useApp } from "@/components/app-context";
 import { insertTurno } from "@/lib/actions";
 import TimeSelect from "./time-select";
@@ -111,12 +111,8 @@ function FormBody({ onSuccess }) {
   const [usaMacchinario, setUsaMacchinario] = useState(false);
   const [usaKm, setUsaKm] = useState(false);
 
-  const oggi = new Date();
-  const pad = (n) => String(n).padStart(2, "0");
-  const dataOggi = `${oggi.getFullYear()}-${pad(oggi.getMonth() + 1)}-${pad(oggi.getDate())}`;
-  const meseMin = `${oggi.getFullYear()}-${pad(oggi.getMonth() + 1)}-01`;
-  const ultimoGiorno = new Date(oggi.getFullYear(), oggi.getMonth() + 1, 0);
-  const meseMax = `${ultimoGiorno.getFullYear()}-${pad(ultimoGiorno.getMonth() + 1)}-${pad(ultimoGiorno.getDate())}`;
+  const { meseMin, meseMax } = getMeseLimiti();
+  const dataOggi = meseMax;
 
   const { register, handleSubmit, control, setValue } = useForm({
     mode: "onChange",
