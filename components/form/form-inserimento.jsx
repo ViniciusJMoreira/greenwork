@@ -111,8 +111,7 @@ function FormBody({ onSuccess }) {
   const [usaMacchinario, setUsaMacchinario] = useState(false);
   const [usaKm, setUsaKm] = useState(false);
 
-  const { meseMin, meseMax } = getMeseLimiti();
-  const dataOggi = meseMax;
+  const { dataOggi, meseMin, meseMax } = getMeseLimiti();
 
   const { register, handleSubmit, control, setValue } = useForm({
     mode: "onChange",
