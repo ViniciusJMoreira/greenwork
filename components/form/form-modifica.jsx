@@ -196,6 +196,11 @@ function FormModifica({ turno, onSuccess, onChiudi, bloccaData = false }) {
   }, [usaKm, setValue]);
 
   async function onSubmit(values) {
+    if (bloccaData && values.data && (values.data < meseMin || values.data > meseMax)) {
+      toast.error("La data deve essere nel mese corrente");
+      return;
+    }
+
     setSaving(true);
 
     const cantiereObj = cantieri.find(

@@ -174,6 +174,11 @@ function FormBody({ onSuccess }) {
   }, [usaKm, setValue]);
 
   async function onSubmit(values) {
+    if (values.data < meseMin || values.data > meseMax) {
+      toast.error("La data deve essere nel mese corrente");
+      return;
+    }
+
     setSaving(true);
 
     const cantiereObj    = cantieri.find((c) => c.id === Number(values.cantiere_id));
