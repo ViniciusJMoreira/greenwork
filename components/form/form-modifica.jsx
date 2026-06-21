@@ -258,6 +258,7 @@ function FormModifica({ turno, onSuccess, onChiudi, bloccaData = false }) {
                 max={bloccaData ? meseMax : undefined}
                 className={inputCls + " appearance-none min-w-0"}
               />
+
             </div>
 
             {/* Cantiere */}

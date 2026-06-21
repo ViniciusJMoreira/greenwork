@@ -428,7 +428,7 @@ export default function TabRiepilogo({ turni: tuttiTurni }) {
   const orePerOperaio = Object.entries(mapOp)
     .map(([nomeCompleto, min]) => ({
       nomeCompleto,
-      nome: nomeCompleto.split(" ")[0],
+      nome: nomeCompleto.split(" ").at(-1),
       min,
       ore: parseFloat((min / 60).toFixed(1)),
     }))
@@ -441,7 +441,10 @@ export default function TabRiepilogo({ turni: tuttiTurni }) {
   const oreCustodia = getOreLavori(turniMese, CUSTODIA_LAVORI);
   const orePerGiorno = getAndamentoMulti(
     turniMese,
-    [{ key: "oreSfalcio", nomi: SFALCIO_LAVORI }, { key: "oreCustodia", nomi: CUSTODIA_LAVORI }],
+    [
+      { key: "oreSfalcio", nomi: SFALCIO_LAVORI },
+      { key: "oreCustodia", nomi: CUSTODIA_LAVORI },
+    ],
     14,
   );
 

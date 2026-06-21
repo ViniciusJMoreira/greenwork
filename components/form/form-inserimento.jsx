@@ -209,9 +209,9 @@ function FormBody({ onSuccess }) {
           <label className={labelCls}>Data</label>
           <input
             type="date"
+            {...register("data")}
             min={meseMin}
             max={meseMax}
-            {...register("data")}
             className={inputCls + " appearance-none min-w-0"}
           />
         </div>
