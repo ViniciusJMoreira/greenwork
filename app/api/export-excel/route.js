@@ -368,7 +368,7 @@ function addFoglioKm(wb, turniMese, dipendenti, meseStr) {
       if (g >= 0 && g < realDays) km[g] += t.km_totale || 0;
     });
     const tot = km.reduce((a, b) => a + b, 0);
-    addDataRow(ws, [String(dip.pin || ""), `${dip.nome} ${dip.cognome}`, "", "", ...pad31(km), tot || null], realDays, nFixed);
+    addDataRow(ws, [String(dip.pin || ""), `${dip.cognome} ${dip.nome}`, "", "", ...pad31(km), tot || null], realDays, nFixed);
   });
 
   ws.views = [{ state: "frozen", ySplit: 2, xSplit: 2 }];

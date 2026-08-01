@@ -284,15 +284,15 @@ function OperaioCard({ dipendente, turni, onEdit, onDelete, index = 0 }) {
             className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
             style={{ background: "var(--primary)" }}
           >
-            {dipendente.nome[0]}
             {dipendente.cognome[0]}
+            {dipendente.nome[0]}
           </div>
           <div className="text-left">
             <p
               className="text-sm font-semibold"
               style={{ color: "var(--text)" }}
             >
-              {dipendente.nome} {dipendente.cognome}
+              {dipendente.cognome} {dipendente.nome}
             </p>
             <p className="text-xs" style={{ color: "var(--text-muted)" }}>
               {turni.length} {turni.length === 1 ? "turno" : "turni"} · {giorni}{" "}
@@ -655,8 +655,8 @@ export default function TabTurni({
       map[id].turni.push(t);
     });
     return Object.values(map).sort((a, b) =>
-      (a.dipendente.nome + a.dipendente.cognome).localeCompare(
-        b.dipendente.nome + b.dipendente.cognome,
+      (a.dipendente.cognome + a.dipendente.nome).localeCompare(
+        b.dipendente.cognome + b.dipendente.nome,
       ),
     );
   }, [filtered, dipendenti]);
@@ -807,7 +807,7 @@ export default function TabTurni({
                       set: setFilterOperaio,
                       options: dipendenti.map((d) => ({
                         value: String(d.id),
-                        label: `${d.nome} ${d.cognome}`,
+                        label: `${d.cognome} ${d.nome}`,
                       })),
                     },
                     {

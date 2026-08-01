@@ -234,7 +234,7 @@ function DipendenteRow({ item, onSaved, onArchiviato }) {
       <div className="flex items-center justify-between px-4 py-3 gap-3">
         <div className="min-w-0 flex-1">
           <p className="text-sm font-medium truncate" style={{ color: "var(--text)" }}>
-            {item.nome} {item.cognome}
+            {item.cognome} {item.nome}
           </p>
           <p className="text-xs" style={{ color: "var(--text-muted)" }}>
             PIN: <span className="font-mono">{item.pin}</span> · {item.ruolo}
@@ -288,7 +288,7 @@ function DipendenteArchivatoRow({ item, onRipristinato }) {
   return (
     <div className="flex items-center justify-between px-4 py-3 gap-3">
       <div className="min-w-0 flex-1">
-        <p className="text-sm truncate" style={{ color: "var(--text-muted)" }}>{item.nome} {item.cognome}</p>
+        <p className="text-sm truncate" style={{ color: "var(--text-muted)" }}>{item.cognome} {item.nome}</p>
         <p className="text-xs" style={{ color: "var(--text-faint)" }}>PIN: <span className="font-mono">{item.pin}</span> · {item.ruolo}</p>
       </div>
       <RipristinaBtn loading={loading} onClick={async () => {
@@ -347,6 +347,11 @@ function DipendenteAddForm({ onAdded }) {
 
 function SezioneDipendenti({ dipendenti: initData }) {
   const [items, setItems] = useState(initData ?? []);
+  const sorted = [...items].sort(
+    (a, b) =>
+      (a.cognome || "").localeCompare(b.cognome || "") ||
+      (a.nome || "").localeCompare(b.nome || ""),
+  );
   function onSaved(updated) { setItems((prev) => prev.map((i) => (i.id === updated.id ? updated : i))); }
   function onAdded(item) { setItems((prev) => [...prev, item]); }
   function onArchiviato(id) { setItems((prev) => prev.filter((i) => i.id !== id)); }
@@ -354,7 +359,7 @@ function SezioneDipendenti({ dipendenti: initData }) {
   return (
     <SezioneConLista label="Dipendenti" icon={Users} count={items.length}>
       <DipendenteAddForm onAdded={onAdded} />
-      {items.map((item) => (
+      {sorted.map((item) => (
         <DipendenteRow key={item.id} item={item} onSaved={onSaved} onArchiviato={onArchiviato} />
       ))}
       <SezioneArchiviati
