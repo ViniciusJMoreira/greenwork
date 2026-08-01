@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(rm package-lock.json)",
+      "Bash(npm install:*)",
+      "Bash(python -c ' *)"
+    ]
+  }
+}
