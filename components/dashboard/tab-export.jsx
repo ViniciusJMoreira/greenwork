@@ -1,7 +1,7 @@
 "use client";
 import { useState, useMemo } from "react";
 import { motion } from "motion/react";
-import { FileDown, Download } from "lucide-react";
+import { FileDown, Download, ChevronDown } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 
 const MESI = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
@@ -85,15 +85,18 @@ export default function TabExport({ turni: tuttiTurni, dipendenti, cantieri, mac
         {/* Selettore mese */}
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>Mese da esportare</label>
-          <select
-            value={mese} onChange={(e) => setMese(e.target.value)}
-            className="w-full rounded-lg px-3 py-2 text-sm outline-none border"
-            style={{ background: "var(--bg-subtle)", borderColor: "var(--border)", color: "var(--text)" }}
-            onFocus={(e) => (e.target.style.borderColor = "var(--primary)")}
-            onBlur={(e)  => (e.target.style.borderColor = "var(--border)")}
-          >
-            {mesiOptions.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
-          </select>
+          <div className="relative">
+            <select
+              value={mese} onChange={(e) => setMese(e.target.value)}
+              className="w-full appearance-none rounded-lg pl-3 pr-8 py-2 text-sm outline-none border"
+              style={{ background: "var(--bg-subtle)", borderColor: "var(--border)", color: "var(--text)" }}
+              onFocus={(e) => (e.target.style.borderColor = "var(--primary)")}
+              onBlur={(e)  => (e.target.style.borderColor = "var(--border)")}
+            >
+              {mesiOptions.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
+            </select>
+            <ChevronDown className="h-4 w-4 pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2" style={{ color: "var(--text-faint)" }} />
+          </div>
         </div>
 
         {/* Anteprima dati */}

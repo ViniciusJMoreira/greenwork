@@ -182,20 +182,23 @@ function FilterSelect({ label, value, onChange, children }) {
       >
         {label}
       </label>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="rounded-lg px-3 py-2 text-sm outline-none border transition-colors cursor-pointer"
-        style={{
-          background: "var(--bg-subtle)",
-          borderColor: "var(--border)",
-          color: "var(--text)",
-        }}
-        onFocus={(e) => (e.target.style.borderColor = "var(--primary)")}
-        onBlur={(e) => (e.target.style.borderColor = "var(--border)")}
-      >
-        {children}
-      </select>
+      <div className="relative">
+        <select
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-full appearance-none rounded-lg pl-3 pr-8 py-2 text-sm outline-none border transition-colors cursor-pointer"
+          style={{
+            background: "var(--bg-subtle)",
+            borderColor: "var(--border)",
+            color: "var(--text)",
+          }}
+          onFocus={(e) => (e.target.style.borderColor = "var(--primary)")}
+          onBlur={(e) => (e.target.style.borderColor = "var(--border)")}
+        >
+          {children}
+        </select>
+        <ChevronDown className="h-4 w-4 pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2" style={{ color: "var(--text-faint)" }} />
+      </div>
     </div>
   );
 }

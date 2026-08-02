@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useForm, Controller, useWatch } from "react-hook-form";
+import { ChevronDown } from "lucide-react";
 import { calcMin, fmtOre, fmtData, getMeseLimiti } from "@/lib/utils";
 import { useApp } from "@/components/app-context";
 import { insertTurno } from "@/lib/actions";
@@ -15,6 +16,7 @@ const fieldCls = "flex flex-col gap-1.5";
 const labelCls = "text-xs font-medium text-[var(--text-muted)]";
 const inputCls =
   "w-full rounded-lg px-3 py-2 text-sm outline-none border transition-colors bg-[var(--bg-subtle)] border-[var(--border)] text-[var(--text)] focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20";
+const selectCls = inputCls.replace("px-3", "pl-3 pr-8") + " appearance-none cursor-pointer";
 
 // Opzioni ore macchinario: 30 min → 12 h con step 30 min
 const ORE_MEZZO_OPTIONS = Array.from({ length: 24 }, (_, i) => {
@@ -224,24 +226,30 @@ function FormBody({ onSuccess }) {
         {/* Cantiere */}
         <div className={fieldCls}>
           <label className={labelCls}>Cantiere</label>
-          <select {...register("cantiere_id")} className={inputCls}>
-            <option value="" disabled>Seleziona cantiere</option>
-            {cantieri?.map((c) => (
-              <option key={c.id} value={c.id}>{c.cantiere}</option>
-            ))}
-          </select>
+          <div className="relative">
+            <select {...register("cantiere_id")} className={selectCls}>
+              <option value="" disabled>Seleziona cantiere</option>
+              {cantieri?.map((c) => (
+                <option key={c.id} value={c.id}>{c.cantiere}</option>
+              ))}
+            </select>
+            <ChevronDown className="h-4 w-4 pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2" style={{ color: "var(--text-faint)" }} />
+          </div>
         </div>
 
         {/* Tipo lavoro */}
         <FadeField show={!!(cantiere_id && !isAssenza)}>
           <div className={fieldCls}>
             <label className={labelCls}>Tipo Lavoro</label>
-            <select {...register("lavoro_id")} className={inputCls}>
-              <option value="" disabled>Seleziona lavoro</option>
-              {lavori?.map((l) => (
-                <option key={l.id} value={l.id}>{l.lavoro}</option>
-              ))}
-            </select>
+            <div className="relative">
+              <select {...register("lavoro_id")} className={selectCls}>
+                <option value="" disabled>Seleziona lavoro</option>
+                {lavori?.map((l) => (
+                  <option key={l.id} value={l.id}>{l.lavoro}</option>
+                ))}
+              </select>
+              <ChevronDown className="h-4 w-4 pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2" style={{ color: "var(--text-faint)" }} />
+            </div>
           </div>
         </FadeField>
 
@@ -309,21 +317,27 @@ function FormBody({ onSuccess }) {
           <div className="flex flex-col gap-4">
             <div className={fieldCls}>
               <label className={labelCls}>Macchinario</label>
-              <select {...register("macchinario_id")} className={inputCls}>
-                <option value="">Seleziona macchinario</option>
-                {macchinari?.map((m) => (
-                  <option key={m.id} value={m.id}>{m.mezzo} — {m.cod_mezzo}</option>
-                ))}
-              </select>
+              <div className="relative">
+                <select {...register("macchinario_id")} className={selectCls}>
+                  <option value="">Seleziona macchinario</option>
+                  {macchinari?.map((m) => (
+                    <option key={m.id} value={m.id}>{m.mezzo} — {m.cod_mezzo}</option>
+                  ))}
+                </select>
+                <ChevronDown className="h-4 w-4 pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2" style={{ color: "var(--text-faint)" }} />
+              </div>
             </div>
             <div className={fieldCls}>
               <label className={labelCls}>Ore macchinario</label>
-              <select {...register("ore_mezzo")} className={inputCls}>
-                <option value="">Seleziona ore</option>
-                {ORE_MEZZO_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>{o.label}</option>
-                ))}
-              </select>
+              <div className="relative">
+                <select {...register("ore_mezzo")} className={selectCls}>
+                  <option value="">Seleziona ore</option>
+                  {ORE_MEZZO_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
+                </select>
+                <ChevronDown className="h-4 w-4 pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2" style={{ color: "var(--text-faint)" }} />
+              </div>
             </div>
             <Controller name="lavoro_finito" control={control}
               render={({ field }) => (

@@ -1,7 +1,13 @@
 "use client";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { motion } from "motion/react";
-import { Clock, CalendarDays, UtensilsCrossed, Milestone } from "lucide-react";
+import {
+  Clock,
+  CalendarDays,
+  UtensilsCrossed,
+  Milestone,
+  ChevronDown,
+} from "lucide-react";
 import { useApp } from "@/components/app-context";
 import { getStats } from "@/lib/stats";
 import { calcMin } from "@/lib/utils";
@@ -29,6 +35,11 @@ const GIORNI = [
   "venerdì",
   "sabato",
 ];
+
+function fmtMese(ym) {
+  const [y, m] = ym.split("-");
+  return `${MESI[parseInt(m) - 1]} ${y}`;
+}
 
 function KpiCard({ icon: Icon, value, label, index = 0, accent = false }) {
   return (
@@ -112,11 +123,22 @@ function HeatCell({ day, hours, index = 0 }) {
 export default function DashboardPage() {
   const { operaio, turni } = useApp();
   const today = new Date();
-  const meseStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
+  const meseCorrente = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
+
+  const [selectedMese, setSelectedMese] = useState(meseCorrente);
+
+  // Mesi disponibili derivati dai turni dell'operaio + mese corrente
+  const mesiOptions = useMemo(() => {
+    const set = new Set(turni.map((t) => t.data?.slice(0, 7)).filter(Boolean));
+    set.add(meseCorrente);
+    return Array.from(set).sort().reverse();
+  }, [turni, meseCorrente]);
+
+  const [selYear, selMonth] = selectedMese.split("-").map(Number); // selMonth 1-based
 
   const turniMese = useMemo(
-    () => turni.filter((t) => t.data?.startsWith(meseStr)),
-    [turni, meseStr],
+    () => turni.filter((t) => t.data?.startsWith(selectedMese)),
+    [turni, selectedMese],
   );
 
   const stats = useMemo(() => getStats(turniMese), [turniMese]);
@@ -145,14 +167,10 @@ export default function DashboardPage() {
     return Object.values(orePerGiorno).filter((min) => min >= 6.5 * 60).length;
   }, [turniMese]);
 
-  // Heatmap mese corrente
-  const daysInMonth = new Date(
-    today.getFullYear(),
-    today.getMonth() + 1,
-    0,
-  ).getDate();
+  // Heatmap mese selezionato
+  const daysInMonth = new Date(selYear, selMonth, 0).getDate();
   const firstDayOffset = (() => {
-    const d = new Date(today.getFullYear(), today.getMonth(), 1).getDay();
+    const d = new Date(selYear, selMonth - 1, 1).getDay();
     return d === 0 ? 6 : d - 1;
   })();
   const orePerGiornoMap = useMemo(() => {
@@ -178,17 +196,45 @@ export default function DashboardPage() {
         initial={{ opacity: 0, y: -12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, ease: "easeOut" }}
-        className="mb-1"
+        className="mb-1 flex items-start justify-between gap-3 flex-wrap"
       >
-        <h1 className="text-xl font-bold" style={{ color: "var(--text)" }}>
-          Bentornato, {operaio?.nome}
-        </h1>
-        <p
-          className="text-sm capitalize mt-0.5"
-          style={{ color: "var(--text-muted)" }}
-        >
-          {dateLabel}
-        </p>
+        <div>
+          <h1 className="text-xl font-bold" style={{ color: "var(--text)" }}>
+            Bentornato, {operaio?.nome}
+          </h1>
+          <p
+            className="text-sm capitalize mt-0.5"
+            style={{ color: "var(--text-muted)" }}
+          >
+            {dateLabel}
+          </p>
+        </div>
+
+        {/* Select mese — solo i mesi con dati disponibili */}
+        <div className="relative inline-flex items-center">
+          <select
+            value={selectedMese}
+            onChange={(e) => setSelectedMese(e.target.value)}
+            className="appearance-none rounded-lg pl-3 pr-8 py-2 text-sm outline-none border transition-colors cursor-pointer"
+            style={{
+              background: "var(--bg-card)",
+              borderColor: "var(--border)",
+              color: "var(--text)",
+            }}
+            onFocus={(e) => (e.target.style.borderColor = "var(--primary)")}
+            onBlur={(e) => (e.target.style.borderColor = "var(--border)")}
+          >
+            {mesiOptions.map((ym) => (
+              <option key={ym} value={ym}>
+                {fmtMese(ym)}
+              </option>
+            ))}
+          </select>
+          <ChevronDown
+            className="h-4 w-4 pointer-events-none absolute right-2.5"
+            style={{ color: "var(--text-muted)" }}
+          />
+        </div>
       </motion.div>
 
       {/* 4 KPI */}
@@ -196,7 +242,7 @@ export default function DashboardPage() {
         <KpiCard
           icon={Clock}
           value={oreTot}
-          label={`Ore — ${MESI[today.getMonth()]}`}
+          label={`Ore — ${MESI[selMonth - 1]}`}
           index={0}
           accent
         />
@@ -245,7 +291,7 @@ export default function DashboardPage() {
             className="text-sm font-semibold"
             style={{ color: "var(--text)" }}
           >
-            Presenze {MESI[today.getMonth()]}
+            Presenze {fmtMese(selectedMese)}
           </span>
         </div>
         <div className="px-5 py-4">
