@@ -588,7 +588,7 @@ export default function TabTurni({
   }
 
   const inputCls =
-    "rounded-lg px-3 py-2 text-sm outline-none border cursor-pointer";
+    "w-full appearance-none rounded-lg pl-3 pr-8 py-2 text-sm outline-none border cursor-pointer";
   const inputStyle = {
     background: "var(--bg-subtle)",
     borderColor: "var(--border)",
@@ -778,25 +778,31 @@ export default function TabTurni({
                   >
                     Mese
                   </label>
-                  <select
-                    value={selectedMese}
-                    onChange={(e) => setSelectedMese(e.target.value)}
-                    className={inputCls}
-                    style={inputStyle}
-                    onFocus={(e) =>
-                      (e.target.style.borderColor = "var(--primary)")
-                    }
-                    onBlur={(e) =>
-                      (e.target.style.borderColor = "var(--border)")
-                    }
-                  >
-                    <option value="all">Tutti i mesi</option>
-                    {mesiOptions.map((ym) => (
-                      <option key={ym} value={ym}>
-                        {fmtMese(ym)}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="relative">
+                    <select
+                      value={selectedMese}
+                      onChange={(e) => setSelectedMese(e.target.value)}
+                      className={inputCls}
+                      style={inputStyle}
+                      onFocus={(e) =>
+                        (e.target.style.borderColor = "var(--primary)")
+                      }
+                      onBlur={(e) =>
+                        (e.target.style.borderColor = "var(--border)")
+                      }
+                    >
+                      <option value="all">Tutti i mesi</option>
+                      {mesiOptions.map((ym) => (
+                        <option key={ym} value={ym}>
+                          {fmtMese(ym)}
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown
+                      className="h-4 w-4 pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2"
+                      style={{ color: "var(--text-faint)" }}
+                    />
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -836,25 +842,31 @@ export default function TabTurni({
                       >
                         {label}
                       </label>
-                      <select
-                        value={value}
-                        onChange={(e) => set(e.target.value)}
-                        className={inputCls}
-                        style={inputStyle}
-                        onFocus={(e) =>
-                          (e.target.style.borderColor = "var(--primary)")
-                        }
-                        onBlur={(e) =>
-                          (e.target.style.borderColor = "var(--border)")
-                        }
-                      >
-                        <option value="all">Tutti</option>
-                        {options.map((o) => (
-                          <option key={o.value} value={o.value}>
-                            {o.label}
-                          </option>
-                        ))}
-                      </select>
+                      <div className="relative">
+                        <select
+                          value={value}
+                          onChange={(e) => set(e.target.value)}
+                          className={inputCls}
+                          style={inputStyle}
+                          onFocus={(e) =>
+                            (e.target.style.borderColor = "var(--primary)")
+                          }
+                          onBlur={(e) =>
+                            (e.target.style.borderColor = "var(--border)")
+                          }
+                        >
+                          <option value="all">Tutti</option>
+                          {options.map((o) => (
+                            <option key={o.value} value={o.value}>
+                              {o.label}
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown
+                          className="h-4 w-4 pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2"
+                          style={{ color: "var(--text-faint)" }}
+                        />
+                      </div>
                     </div>
                   ))}
                   {[

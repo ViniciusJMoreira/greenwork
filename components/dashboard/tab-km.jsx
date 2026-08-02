@@ -60,16 +60,19 @@ export default function TabKm({ turni: tuttiTurni, dipendenti }) {
           </p>
         </div>
         {/* Selettore mese */}
-        <select
-          value={mese}
-          onChange={(e) => setMese(e.target.value)}
-          className="rounded-lg px-3 py-2 text-sm outline-none border"
-          style={{ background: "var(--bg-subtle)", borderColor: "var(--border)", color: "var(--text)" }}
-          onFocus={(e) => (e.target.style.borderColor = "var(--primary)")}
-          onBlur={(e)  => (e.target.style.borderColor = "var(--border)")}
-        >
-          {mesiOptions.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
-        </select>
+        <div className="relative">
+          <select
+            value={mese}
+            onChange={(e) => setMese(e.target.value)}
+            className="appearance-none rounded-lg pl-3 pr-8 py-2 text-sm outline-none border"
+            style={{ background: "var(--bg-subtle)", borderColor: "var(--border)", color: "var(--text)" }}
+            onFocus={(e) => (e.target.style.borderColor = "var(--primary)")}
+            onBlur={(e)  => (e.target.style.borderColor = "var(--border)")}
+          >
+            {mesiOptions.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
+          </select>
+          <ChevronDown className="h-4 w-4 pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2" style={{ color: "var(--text-faint)" }} />
+        </div>
       </div>
 
       {righe.length === 0 ? (

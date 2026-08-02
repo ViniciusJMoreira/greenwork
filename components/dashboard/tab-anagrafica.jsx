@@ -17,6 +17,7 @@ import toast from "react-hot-toast";
 import { Spinner } from "@/components/ui/spinner";
 
 const inputCls = "w-full rounded-lg px-3 py-2 text-sm outline-none border transition-colors bg-[var(--bg-subtle)] border-[var(--border)] text-[var(--text)] focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/20";
+const selectCls = inputCls.replace("px-3", "pl-3 pr-8") + " appearance-none cursor-pointer";
 const labelCls = "text-xs font-medium text-[var(--text-muted)]";
 const fieldCls = "flex flex-col gap-1.5";
 
@@ -265,10 +266,13 @@ function DipendenteRow({ item, onSaved, onArchiviato }) {
                 <div className={fieldCls}><label className={labelCls}>PIN</label><input {...register("pin", { required: true })} type="number" className={inputCls} /></div>
                 <div className={fieldCls}>
                   <label className={labelCls}>Ruolo</label>
-                  <select {...register("ruolo", { required: true })} className={inputCls}>
-                    <option value="operaio">Operaio</option>
-                    <option value="responsabile">Responsabile</option>
-                  </select>
+                  <div className="relative">
+                    <select {...register("ruolo", { required: true })} className={selectCls}>
+                      <option value="operaio">Operaio</option>
+                      <option value="responsabile">Responsabile</option>
+                    </select>
+                    <ChevronDown className="h-4 w-4 pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2" style={{ color: "var(--text-faint)" }} />
+                  </div>
                 </div>
               </div>
               <div className="flex gap-2">
@@ -330,11 +334,14 @@ function DipendenteAddForm({ onAdded }) {
         <div className={fieldCls}><label className={labelCls}>PIN *</label><input {...register("pin", { required: true })} type="number" placeholder="es. 3621" className={inputCls} /></div>
         <div className={fieldCls}>
           <label className={labelCls}>Ruolo *</label>
-          <select {...register("ruolo", { required: true })} className={inputCls}>
-            <option value="">Seleziona</option>
-            <option value="operaio">Operaio</option>
-            <option value="responsabile">Responsabile</option>
-          </select>
+          <div className="relative">
+            <select {...register("ruolo", { required: true })} className={selectCls}>
+              <option value="">Seleziona</option>
+              <option value="operaio">Operaio</option>
+              <option value="responsabile">Responsabile</option>
+            </select>
+            <ChevronDown className="h-4 w-4 pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2" style={{ color: "var(--text-faint)" }} />
+          </div>
         </div>
       </div>
       <div className="flex gap-2">

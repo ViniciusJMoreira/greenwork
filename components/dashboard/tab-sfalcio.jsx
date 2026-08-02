@@ -492,24 +492,27 @@ export default function TabSfalcio({ turni: tuttiTurni }) {
             · {fmtMese(selectedMese)}
           </p>
         </div>
-        <select
-          value={selectedMese}
-          onChange={(e) => setSelectedMese(e.target.value)}
-          className="rounded-lg px-3 py-2 text-sm outline-none border transition-colors cursor-pointer"
-          style={{
-            background: "var(--bg-card)",
-            borderColor: "var(--border)",
-            color: "var(--text)",
-          }}
-          onFocus={(e) => (e.target.style.borderColor = "var(--primary)")}
-          onBlur={(e) => (e.target.style.borderColor = "var(--border)")}
-        >
-          {mesiOptions.map((ym) => (
-            <option key={ym} value={ym}>
-              {fmtMese(ym)}
-            </option>
-          ))}
-        </select>
+        <div className="relative inline-flex items-center">
+          <select
+            value={selectedMese}
+            onChange={(e) => setSelectedMese(e.target.value)}
+            className="appearance-none rounded-lg pl-3 pr-8 py-2 text-sm outline-none border transition-colors cursor-pointer"
+            style={{
+              background: "var(--bg-card)",
+              borderColor: "var(--border)",
+              color: "var(--text)",
+            }}
+            onFocus={(e) => (e.target.style.borderColor = "var(--primary)")}
+            onBlur={(e) => (e.target.style.borderColor = "var(--border)")}
+          >
+            {mesiOptions.map((ym) => (
+              <option key={ym} value={ym}>
+                {fmtMese(ym)}
+              </option>
+            ))}
+          </select>
+          <ChevronDown className="h-4 w-4 pointer-events-none absolute right-2.5" style={{ color: "var(--text-muted)" }} />
+        </div>
       </div>
 
       {/* Cards */}
