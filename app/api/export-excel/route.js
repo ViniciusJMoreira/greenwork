@@ -195,22 +195,21 @@ function addFoglioContabilita(wb, turniMese, dipendenti, cantieri, meseStr) {
 }
 
 // ── Foglio Buste Paghe ─────────────────────────────────────────────────────
-function addFoglioBustePaghe(wb, turniMese, dipendenti, cantieri, macchinari, meseStr) {
+function addFoglioBustePaghe(wb, turniMese, dipendenti, cantieri, meseStr) {
   const ws       = wb.addWorksheet(`Buste Paghe ${meseStr}`);
   const realDays = giorniNelMese(meseStr);
   const [y, m]   = meseStr.split("-").map(Number);
-  const nFixed   = 4;
+  const nFixed   = 3;
 
   ws.columns = [
     { key: "a", width: 22 },
     { key: "b", width: 15 },
     { key: "c", width: 20 },
-    { key: "d", width: 13 },
     ...Array.from({ length: TOTAL_DAYS }, () => ({ width: 4.2 })),
     { key: "tot", width: 10 },
   ];
 
-  addHeaderRow(ws, ["DIPENDENTE", "COD. DIPENDENTE", "COD. CANTIERE", "COD. MEZZO"], realDays);
+  addHeaderRow(ws, ["DIPENDENTE", "COD. DIPENDENTE", "COD. CANTIERE"], realDays);
 
   dipendenti.forEach((dip) => {
     const turniDip = turniMese.filter((t) => String(t.dipendente_id) === String(dip.id));
@@ -228,14 +227,11 @@ function addFoglioBustePaghe(wb, turniMese, dipendenti, cantieri, macchinari, me
       if (isAssenza) {
         assenzaGiorni[g] = cant.cod_cantiere; // es. "BG", "PR", "FR", "PI", "MA"
       } else {
-        const mezzo       = macchinari.find((mc) => String(mc.id) === String(t.mezzo_id));
         const codCantiere = cant?.cod_cantiere || "—";
-        const codMezzo    = mezzo?.cod_mezzo   || "";
-        const key         = `${codCantiere}||${codMezzo}`;
+        const key         = codCantiere;
 
         if (!mapReg[key]) mapReg[key] = {
           codCantiere,
-          codMezzo,
           giorni:      Array(realDays).fill(0),
           giorniNotte: Array(realDays).fill(0),
         };
@@ -251,18 +247,18 @@ function addFoglioBustePaghe(wb, turniMese, dipendenti, cantieri, macchinari, me
     if (!hasData) return;
 
     const nomeDip = `${dip.cognome?.toUpperCase()} ${dip.nome?.[0]}.`;
-    addYellowRow(ws, [nomeDip, String(dip.pin || ""), "", ""], realDays, y, m);
+    addYellowRow(ws, [nomeDip, String(dip.pin || ""), ""], realDays, y, m);
 
     // Righe cantieri ore diurne + eventuale sub-riga notturna
     Object.values(mapReg).forEach((v) => {
       const tot = v.giorni.reduce((a, b) => a + b, 0);
-      addDataRow(ws, ["", "", v.codCantiere, v.codMezzo, ...pad31(v.giorni), tot || null], realDays, nFixed);
+      addDataRow(ws, ["", "", v.codCantiere, ...pad31(v.giorni), tot || null], realDays, nFixed);
 
       const totNotte = v.giorniNotte.reduce((a, b) => a + b, 0);
       if (totNotte > 0) {
         addDataRow(
           ws,
-          ["", "", v.codCantiere, v.codMezzo, ...pad31(v.giorniNotte), totNotte],
+          ["", "", v.codCantiere, ...pad31(v.giorniNotte), totNotte],
           realDays,
           nFixed,
           { isNight: true, redCol: 3 },
@@ -272,7 +268,7 @@ function addFoglioBustePaghe(wb, turniMese, dipendenti, cantieri, macchinari, me
 
     // Riga LET: codici assenza nelle celle del giorno corrispondente
     if (assenzaGiorni.some(Boolean)) {
-      const letRow = ws.addRow(["", "", "COD. LETTERE", "", ...pad31(assenzaGiorni), ""]);
+      const letRow = ws.addRow(["", "", "COD. LETTERE", ...pad31(assenzaGiorni), ""]);
       letRow.height = 17;
       const totColLet = nFixed + TOTAL_DAYS + 1;
       letRow.eachCell({ includeEmpty: true }, (cell, col) => {
@@ -401,7 +397,7 @@ export async function POST(request) {
   wb.created = new Date();
 
   addFoglioContabilita(wb, turniMese, dipendenti, cantieri, mese);
-  addFoglioBustePaghe(wb, turniMese, dipendenti, cantieri, macchinari, mese);
+  addFoglioBustePaghe(wb, turniMese, dipendenti, cantieri, mese);
   addFoglioMezzi(wb, turniMese, macchinari, mese);
   addFoglioKm(wb, turniMese, dipendenti, mese);
 
