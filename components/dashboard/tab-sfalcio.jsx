@@ -57,7 +57,8 @@ const CAMPI_SFALCIO = [
   "Ina Casa",
   "Viserbella",
   "San Vito",
-  "Rivabella",
+  "Rivabella Baseball",
+  "Rivabella Rugby",
   "Corpolò",
   "Stadio",
 ];
