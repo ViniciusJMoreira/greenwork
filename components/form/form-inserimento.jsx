@@ -3,11 +3,12 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useForm, Controller, useWatch } from "react-hook-form";
 import { ChevronDown } from "lucide-react";
-import { calcMin, fmtOre, fmtData, getMeseLimiti } from "@/lib/utils";
+import { calcMin, fmtOre, fmtData, getMeseLimiti, isLavoroPreventivo, isCantiereServizioPagamento } from "@/lib/utils";
 import { useApp } from "@/components/app-context";
 import { insertTurno } from "@/lib/actions";
 import TimeSelect from "./time-select";
 import KmPercorsoInput from "./km-percorso-input";
+import ServizioPagamentoInput from "./servizio-pagamento-input";
 import toast from "react-hot-toast";
 import { Spinner } from "@/components/ui/spinner";
 
@@ -122,6 +123,8 @@ function FormBody({ onSuccess }) {
       data: dataOggi,
       cantiere_id: "",
       lavoro_id: "",
+      cod_preventivo: "",
+      servizio_pagamento: "",
       macchinario_id: "",
       ore_mezzo: "",
       inizio: "",
@@ -141,15 +144,21 @@ function FormBody({ onSuccess }) {
   const ore_mezzo   = useWatch({ control, name: "ore_mezzo" });
   const km_percorso = useWatch({ control, name: "km_percorso" });
   const km_totale   = useWatch({ control, name: "km_totale" });
+  const cod_preventivo = useWatch({ control, name: "cod_preventivo" });
+  const servizio_pagamento = useWatch({ control, name: "servizio_pagamento" });
 
   const minutiForm = calcMin(inizio, fine);
   const isAssenza  = cantieri.find((c) => c.id === Number(cantiere_id))?.isAssenza ?? false;
+  const isServizioPagamento = isCantiereServizioPagamento(cantieri.find((c) => c.id === Number(cantiere_id))?.cantiere);
   const cantieriNormali = cantieri.filter((c) => !c.isAssenza);
+  const isPreventivo = isLavoroPreventivo(lavori.find((l) => l.id === Number(lavoro_id))?.lavoro);
 
   const campiBase  = !!cantiere_id && !!lavoro_id && !!inizio && !!fine && minutiForm > 0;
+  const campiPrev  = !isPreventivo || !!(cod_preventivo ?? "").trim();
+  const campiServ  = !isServizioPagamento || !!(servizio_pagamento ?? "").trim();
   const campiMezzo = !usaMacchinario || (!!macchinario_id && !!ore_mezzo);
   const campiKm    = !usaKm || (!!(km_percorso ?? "").trim() && !!km_totale && parseFloat(km_totale) > 0);
-  const canSubmit  = isAssenza ? !!cantiere_id : campiBase && campiMezzo && campiKm;
+  const canSubmit  = isAssenza ? !!cantiere_id : campiBase && campiPrev && campiServ && campiMezzo && campiKm;
 
   useEffect(() => {
     if (isAssenza) {
@@ -237,6 +246,15 @@ function FormBody({ onSuccess }) {
           </div>
         </div>
 
+        {/* Servizio a pagamento — campo sportivo + società */}
+        <FadeField show={isServizioPagamento}>
+          <Controller name="servizio_pagamento" control={control}
+            render={({ field }) => (
+              <ServizioPagamentoInput value={field.value} onChange={field.onChange} cantieri={cantieriNormali} />
+            )}
+          />
+        </FadeField>
+
         {/* Tipo lavoro */}
         <FadeField show={!!(cantiere_id && !isAssenza)}>
           <div className={fieldCls}>
@@ -250,6 +268,15 @@ function FormBody({ onSuccess }) {
               </select>
               <ChevronDown className="h-4 w-4 pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2" style={{ color: "var(--text-faint)" }} />
             </div>
+          </div>
+        </FadeField>
+
+        {/* Codice preventivo — solo per "Lavoro a preventivo" */}
+        <FadeField show={!!(cantiere_id && !isAssenza && isPreventivo)}>
+          <div className={fieldCls}>
+            <label className={labelCls}>Codice preventivo</label>
+            <input type="text" {...register("cod_preventivo")} placeholder="Inserisci codice preventivo"
+              className={inputCls} />
           </div>
         </FadeField>
 

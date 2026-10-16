@@ -209,6 +209,42 @@ if (dataStr.includes('/')) {
 
 ---
 
+### `isLavoroPreventivo(lavoro)`
+
+Restituisce `true` se il nome del tipo di lavoro è "Lavoro a preventivo"
+(confronto senza maiuscole/minuscole e spazi esterni).
+
+```js
+isLavoroPreventivo("Lavoro a preventivo")   // → true
+isLavoroPreventivo(" lavoro A PREVENTIVO ") // → true
+isLavoroPreventivo("Sfalcio")               // → false
+isLavoroPreventivo(undefined)               // → false
+```
+
+**Chi lo usa:**
+- `components/form/form-inserimento.jsx` e `form-modifica.jsx` → mostrano l'input
+  obbligatorio "Codice preventivo" subito sotto "Tipo Lavoro" solo per questo tipo di lavoro
+
+---
+
+### `isCantiereServizioPagamento(cantiere)`
+
+Restituisce `true` se il nome del cantiere è "Servizi a Pagamento" (o "Servizio a Pagamento"),
+confronto senza maiuscole/minuscole e spazi esterni.
+
+```js
+isCantiereServizioPagamento("Servizi a Pagamento")  // → true
+isCantiereServizioPagamento("servizio a pagamento") // → true
+isCantiereServizioPagamento("Rivabella Rugby")      // → false
+isCantiereServizioPagamento(undefined)              // → false
+```
+
+**Chi lo usa:**
+- `components/form/form-inserimento.jsx` e `form-modifica.jsx` → mostrano l'input
+  obbligatorio "Servizio a pagamento" (campo sportivo + società) subito sotto "Cantiere"
+
+---
+
 ## Dipendenze
 
 ```

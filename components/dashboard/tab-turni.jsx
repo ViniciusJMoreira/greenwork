@@ -6,6 +6,8 @@ import {
   ChevronDown,
   ChevronUp,
   FileSearch,
+  FileText,
+  MapPin,
   Wrench,
   Pencil,
   Trash2,
@@ -151,6 +153,28 @@ function TurnoCard({
           >
             <Wrench className="h-3 w-3 shrink-0" />
             {record.mezzo}
+          </span>
+        )}
+
+        {/* Riga 4: codice preventivo */}
+        {record.cod_preventivo && (
+          <span
+            className="flex items-center gap-1 text-xs"
+            style={{ color: "var(--text-faint)" }}
+          >
+            <FileText className="h-3 w-3 shrink-0" />
+            Preventivo: {record.cod_preventivo}
+          </span>
+        )}
+
+        {/* Riga 5: servizio a pagamento (campo sportivo + società) */}
+        {record.servizio_pagamento && (
+          <span
+            className="flex items-center gap-1 text-xs"
+            style={{ color: "var(--text-faint)" }}
+          >
+            <MapPin className="h-3 w-3 shrink-0" />
+            {record.servizio_pagamento}
           </span>
         )}
       </div>
@@ -553,6 +577,7 @@ export default function TabTurni({
   const [filterOperaio, setFilterOperaio] = useState("all");
   const [filterCantiere, setFilterCantiere] = useState("all");
   const [filterLavoro, setFilterLavoro] = useState("all");
+  const [filterPreventivo, setFilterPreventivo] = useState("all");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -604,6 +629,11 @@ export default function TabTurni({
   ymSet.add(currentYM);
   const mesiOptions = Array.from(ymSet).sort().reverse();
 
+  // Codici preventivo distinti presenti nei turni
+  const preventiviOptions = Array.from(
+    new Set(tuttiTurni.map((t) => t.cod_preventivo).filter(Boolean)),
+  ).sort();
+
   const filtered = useMemo(
     () =>
       tuttiTurni.filter((t) => {
@@ -623,6 +653,11 @@ export default function TabTurni({
           return false;
         if (filterLavoro !== "all" && String(t.lavoro_id) !== filterLavoro)
           return false;
+        if (
+          filterPreventivo !== "all" &&
+          t.cod_preventivo !== filterPreventivo
+        )
+          return false;
         return true;
       }),
     [
@@ -633,6 +668,7 @@ export default function TabTurni({
       filterOperaio,
       filterCantiere,
       filterLavoro,
+      filterPreventivo,
     ],
   );
 
@@ -685,7 +721,8 @@ export default function TabTurni({
     endDate ||
     filterOperaio !== "all" ||
     filterCantiere !== "all" ||
-    filterLavoro !== "all";
+    filterLavoro !== "all" ||
+    filterPreventivo !== "all";
   const activeCount = [
     selectedMese !== "all",
     startDate,
@@ -693,6 +730,7 @@ export default function TabTurni({
     filterOperaio !== "all",
     filterCantiere !== "all",
     filterLavoro !== "all",
+    filterPreventivo !== "all",
   ].filter(Boolean).length;
 
   function resetFilters() {
@@ -702,6 +740,7 @@ export default function TabTurni({
     setFilterOperaio("all");
     setFilterCantiere("all");
     setFilterLavoro("all");
+    setFilterPreventivo("all");
   }
 
   return (
@@ -832,6 +871,15 @@ export default function TabTurni({
                       options: lavori.map((l) => ({
                         value: String(l.id),
                         label: l.lavoro,
+                      })),
+                    },
+                    {
+                      label: "Codice preventivo",
+                      value: filterPreventivo,
+                      set: setFilterPreventivo,
+                      options: preventiviOptions.map((p) => ({
+                        value: p,
+                        label: p,
                       })),
                     },
                   ].map(({ label, value, set, options }) => (
