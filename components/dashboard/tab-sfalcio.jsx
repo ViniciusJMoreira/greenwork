@@ -54,7 +54,6 @@ const CAMPI_SFALCIO = [
   "Miramare Naturale",
   "Spadarolo",
   "Miramare Sintetico",
-  "Ina Casa",
   "Viserbella",
   "San Vito",
   "Rivabella Baseball",
@@ -74,6 +73,7 @@ const SFALCIO_LAVORI = new Set([
   "Altre Manutenzioni",
   "Rigatura Extra",
   "Rigatura",
+  "Dec",
 ]);
 
 const CS_LAVORI = new Set(["Sfalcio CS", "Sfalcio CS + Rullo"]);
