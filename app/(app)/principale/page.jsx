@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -92,7 +92,7 @@ function KpiCard({ icon: Icon, value, label, index = 0, accent = false }) {
   );
 }
 
-const ASSENZA_BG = "#3b82f6";
+const ASSENZA_BG = "#64748b"; // ardesia
 
 function HeatCell({ day, hours, assenza, selected, onClick, index = 0 }) {
   let bg = "var(--bg-subtle)";
@@ -110,11 +110,11 @@ function HeatCell({ day, hours, assenza, selected, onClick, index = 0 }) {
     bg = ASSENZA_BG;
     color = "white";
   }
-  // Assenza + ore nello stesso giorno: metà blu e metà colore ore, taglio "/" sfumato
+  // Assenza + ore nello stesso giorno: due triangoli netti (blu / colore ore)
+  // separati da una riga diagonale grigia come i giorni vuoti
   const misto = assenza && hours > 0;
   if (misto) {
-    bg = `linear-gradient(135deg, ${ASSENZA_BG} 0%, ${ASSENZA_BG} 40%, ${bg} 60%, ${bg} 100%)`;
-    color = "white";
+    bg = `linear-gradient(135deg, ${ASSENZA_BG} calc(50% - 1.5px), var(--bg-subtle) calc(50% - 1.5px), var(--bg-subtle) calc(50% + 1.5px), ${bg} calc(50% + 1.5px))`;
   }
   const ore = hours > 0 ? hours.toFixed(1) + "h" : "";
   const title = assenza
@@ -142,13 +142,28 @@ function HeatCell({ day, hours, assenza, selected, onClick, index = 0 }) {
         style={{
           background: bg,
           color,
-          textShadow: misto ? "0 0 3px rgba(0,0,0,0.55)" : "none",
           boxShadow: selected
             ? "0 0 0 2px var(--bg-card), 0 0 0 4px var(--primary)"
-            : "none",
+            : misto
+              ? "inset 0 0 0 1px var(--border)"
+              : "none",
         }}
       >
-        {day}
+        {misto ? (
+          // Numero in un cerchio neutro sopra la diagonale: lega i due colori
+          <span
+            className="w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold shadow-sm"
+            style={{
+              background: "var(--bg-card)",
+              color: "var(--text)",
+              boxShadow: "0 0 0 1px var(--border)",
+            }}
+          >
+            {day}
+          </span>
+        ) : (
+          day
+        )}
       </motion.button>
     </motion.div>
   );
@@ -169,7 +184,7 @@ function DayBubble({ info, onClose }) {
   } else if (assenza) {
     Icon = CalendarOff;
     accent = ASSENZA_BG;
-    bgIcon = "rgba(59,130,246,0.15)";
+    bgIcon = "rgba(100,116,139,0.15)";
     value = assenza;
   }
   return (
@@ -308,10 +323,18 @@ export default function DashboardPage() {
     return () => clearTimeout(timer);
   }, [selected, bubbleMs]);
 
+  // Testa del calendario: al click la porto in vista, così la bolla si vede sempre
+  const calendarioRef = useRef(null);
+  const TOPBAR_OFFSET = 72; // top bar sticky (h-14) + margine
+
   function toggleDay(day) {
-    setSelected((prev) =>
-      prev?.mese === selectedMese && prev.day === day ? null : { mese: selectedMese, day },
-    );
+    const chiude = selected?.mese === selectedMese && selected.day === day;
+    setSelected(chiude ? null : { mese: selectedMese, day });
+    if (chiude) return;
+    const el = calendarioRef.current;
+    if (el && el.getBoundingClientRect().top < TOPBAR_OFFSET) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
   }
 
   const bubbleInfo = selectedDay
@@ -435,7 +458,11 @@ export default function DashboardPage() {
             Presenze {fmtMese(selectedMese)}
           </span>
         </div>
-        <div className="px-5 py-4 relative">
+        <div
+          ref={calendarioRef}
+          className="px-5 py-4 relative"
+          style={{ scrollMarginTop: TOPBAR_OFFSET }}
+        >
           {/* Bolla dettaglio giorno */}
           <AnimatePresence>
             {bubbleInfo && (
