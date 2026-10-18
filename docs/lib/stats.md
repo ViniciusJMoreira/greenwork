@@ -78,14 +78,15 @@ getStats(VINICIUS_DATA)
 | Campo           | Tipo     | Descrizione                                              |
 |-----------------|----------|----------------------------------------------------------|
 | `minutiTotali`  | `number` | Somma di tutti i minuti lavorati                        |
-| `giorniSet`     | `Set`    | Set delle date ISO uniche (usato per `.size` e per loop)|
-| `giorniLavorati`| `number` | Numero di giorni distinti con almeno un record           |
+| `giorniSet`     | `Set`    | Set delle date ISO uniche **esclusi i turni di assenza** |
+| `giorniLavorati`| `number` | Giorni distinti con almeno un turno che non è un'assenza |
 | `numCantieri`   | `number` | Numero di cantieri distinti presenti nei registri        |
 
 **Come funziona internamente:**
 ```js
 const minutiTotali = registri.reduce((acc, r) => acc + calcMin(r.inizio, r.fine), 0)
-const giorniSet    = new Set(registri.map(r => r.data))
+// i record con isAssenza: true (Ferie, Permesso, Malattia, Pioggia, Flessibilità) non contano
+const giorniSet    = new Set(registri.filter(r => !r.isAssenza).map(r => r.data))
 const numCantieri  = new Set(registri.map(r => r.cantiere)).size
 ```
 

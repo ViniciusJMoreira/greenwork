@@ -1,12 +1,16 @@
 "use client";
-import { useMemo, useState } from "react";
-import { motion } from "motion/react";
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { motion, AnimatePresence } from "motion/react";
 import {
   Clock,
   CalendarDays,
   UtensilsCrossed,
   Milestone,
   ChevronDown,
+  CalendarOff,
+  Moon,
+  ArrowRight,
 } from "lucide-react";
 import { useApp } from "@/components/app-context";
 import { getStats } from "@/lib/stats";
@@ -88,7 +92,9 @@ function KpiCard({ icon: Icon, value, label, index = 0, accent = false }) {
   );
 }
 
-function HeatCell({ day, hours, index = 0 }) {
+const ASSENZA_BG = "#3b82f6";
+
+function HeatCell({ day, hours, assenza, selected, onClick, index = 0 }) {
   let bg = "var(--bg-subtle)";
   let color = "var(--text-faint)";
   if (hours >= 8) {
@@ -100,7 +106,20 @@ function HeatCell({ day, hours, index = 0 }) {
   } else if (hours > 0) {
     bg = "#fee2e2";
     color = "#b91c1c";
+  } else if (assenza) {
+    bg = ASSENZA_BG;
+    color = "white";
   }
+  // Assenza + ore nello stesso giorno: metà blu e metà colore ore, taglio "/" sfumato
+  const misto = assenza && hours > 0;
+  if (misto) {
+    bg = `linear-gradient(135deg, ${ASSENZA_BG} 0%, ${ASSENZA_BG} 40%, ${bg} 60%, ${bg} 100%)`;
+    color = "white";
+  }
+  const ore = hours > 0 ? hours.toFixed(1) + "h" : "";
+  const title = assenza
+    ? `${day}: ${assenza}${ore ? " · " + ore : ""}`
+    : `${day}: ${ore || "riposo"}`;
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0 }}
@@ -111,11 +130,102 @@ function HeatCell({ day, hours, index = 0 }) {
         damping: 22,
         delay: 0.4 + index * 0.012,
       }}
-      title={`${day}: ${hours > 0 ? hours.toFixed(1) + "h" : "riposo"}`}
-      className="aspect-square rounded flex items-center justify-center text-[9px] font-bold cursor-default"
-      style={{ background: bg, color }}
     >
-      {day}
+      <motion.button
+        type="button"
+        onClick={onClick}
+        animate={{ scale: selected ? 1.08 : 1 }}
+        whileTap={{ scale: 0.85 }}
+        transition={{ type: "spring", stiffness: 500, damping: 22 }}
+        title={title}
+        className="w-full aspect-square rounded flex items-center justify-center text-[9px] font-bold cursor-pointer"
+        style={{
+          background: bg,
+          color,
+          textShadow: misto ? "0 0 3px rgba(0,0,0,0.55)" : "none",
+          boxShadow: selected
+            ? "0 0 0 2px var(--bg-card), 0 0 0 4px var(--primary)"
+            : "none",
+        }}
+      >
+        {day}
+      </motion.button>
+    </motion.div>
+  );
+}
+
+// Bolla animata con il dettaglio del giorno cliccato
+function DayBubble({ info, onClose }) {
+  const { label, hours, assenza, giorno, hasTurni } = info;
+  let Icon = Moon;
+  let accent = "var(--text-muted)";
+  let bgIcon = "var(--bg-subtle)";
+  let value = "Riposo";
+  if (hours > 0) {
+    Icon = Clock;
+    accent = "var(--primary)";
+    bgIcon = "var(--primary-faint)";
+    value = hours.toFixed(1).replace(".", ",") + " ore";
+  } else if (assenza) {
+    Icon = CalendarOff;
+    accent = ASSENZA_BG;
+    bgIcon = "rgba(59,130,246,0.15)";
+    value = assenza;
+  }
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -16, scale: 0.9 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: -12, scale: 0.92 }}
+      transition={{ type: "spring", stiffness: 420, damping: 26 }}
+      onClick={onClose}
+      className="absolute left-3 right-3 top-2 z-10 rounded-xl border px-4 py-3 flex items-center gap-3 shadow-xl cursor-pointer"
+      style={{ background: "var(--bg-card)", borderColor: "var(--border)" }}
+    >
+      <motion.div
+        initial={{ scale: 0, rotate: -30 }}
+        animate={{ scale: 1, rotate: 0 }}
+        transition={{ type: "spring", stiffness: 500, damping: 16, delay: 0.05 }}
+        className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
+        style={{ background: bgIcon }}
+      >
+        <Icon className="h-4 w-4" style={{ color: accent }} />
+      </motion.div>
+      <div className="min-w-0 flex-1">
+        <p className="text-xs capitalize" style={{ color: "var(--text-muted)" }}>
+          {label}
+        </p>
+        <p className="text-base font-bold leading-tight" style={{ color: accent }}>
+          {value}
+          {hours > 0 && assenza && (
+            <span className="text-xs font-semibold ml-2" style={{ color: ASSENZA_BG }}>
+              + {assenza}
+            </span>
+          )}
+        </p>
+      </div>
+      {hasTurni && (
+        <motion.div
+          initial={{ opacity: 0, x: 10 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ type: "spring", stiffness: 420, damping: 24, delay: 0.12 }}
+          className="shrink-0"
+        >
+          <Link
+            href={`/storico?giorno=${giorno}`}
+            onClick={(e) => e.stopPropagation()}
+            className="group flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors"
+            style={{
+              color: "var(--primary)",
+              background: "var(--primary-faint)",
+              borderColor: "color-mix(in srgb, var(--primary) 25%, transparent)",
+            }}
+          >
+            Storico
+            <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+          </Link>
+        </motion.div>
+      )}
     </motion.div>
   );
 }
@@ -173,14 +283,45 @@ export default function DashboardPage() {
     const d = new Date(selYear, selMonth - 1, 1).getDay();
     return d === 0 ? 6 : d - 1;
   })();
-  const orePerGiornoMap = useMemo(() => {
+  // Per ogni giorno: ore lavorate + nome dell'eventuale assenza (Ferie, Permesso...)
+  const giorniMap = useMemo(() => {
     const map = {};
     turniMese.forEach((t) => {
       const d = parseInt(t.data?.split("-")[2]);
-      if (d) map[d] = (map[d] || 0) + calcMin(t.inizio, t.fine) / 60;
+      if (!d) return;
+      if (!map[d]) map[d] = { hours: 0, assenza: null };
+      map[d].hours += calcMin(t.inizio, t.fine) / 60;
+      if (t.isAssenza) map[d].assenza = t.cantiere;
     });
     return map;
   }, [turniMese]);
+
+  // Giorno cliccato nel calendario → bolla con il dettaglio, si chiude da sola
+  const [selected, setSelected] = useState(null); // { mese, day }
+  const selectedDay = selected?.mese === selectedMese ? selected.day : null;
+
+  // Con turni nel giorno la bolla resta di più, per dare tempo di toccare "Storico"
+  const bubbleMs = selectedDay && giorniMap[selectedDay] ? 5000 : 2500;
+  useEffect(() => {
+    if (!selected) return;
+    const timer = setTimeout(() => setSelected(null), bubbleMs);
+    return () => clearTimeout(timer);
+  }, [selected, bubbleMs]);
+
+  function toggleDay(day) {
+    setSelected((prev) =>
+      prev?.mese === selectedMese && prev.day === day ? null : { mese: selectedMese, day },
+    );
+  }
+
+  const bubbleInfo = selectedDay
+    ? {
+        ...(giorniMap[selectedDay] ?? { hours: 0, assenza: null }),
+        hasTurni: !!giorniMap[selectedDay],
+        giorno: `${selectedMese}-${String(selectedDay).padStart(2, "0")}`,
+        label: `${GIORNI[new Date(selYear, selMonth - 1, selectedDay).getDay()]} ${selectedDay} ${MESI[selMonth - 1]}`,
+      }
+    : null;
 
   const dateLabel = `${GIORNI[today.getDay()]} ${today.getDate()} ${MESI[today.getMonth()]} ${today.getFullYear()}`;
 
@@ -294,7 +435,18 @@ export default function DashboardPage() {
             Presenze {fmtMese(selectedMese)}
           </span>
         </div>
-        <div className="px-5 py-4">
+        <div className="px-5 py-4 relative">
+          {/* Bolla dettaglio giorno */}
+          <AnimatePresence>
+            {bubbleInfo && (
+              <DayBubble
+                key={`${selectedMese}-${selectedDay}`}
+                info={bubbleInfo}
+                onClose={() => setSelected(null)}
+              />
+            )}
+          </AnimatePresence>
+
           {/* Header giorni */}
           <div className="grid grid-cols-7 gap-1 mb-1">
             {["L", "M", "M", "G", "V", "S", "D"].map((d, i) => (
@@ -316,13 +468,26 @@ export default function DashboardPage() {
               <HeatCell
                 key={i + 1}
                 day={i + 1}
-                hours={orePerGiornoMap[i + 1] || 0}
+                hours={giorniMap[i + 1]?.hours || 0}
+                assenza={giorniMap[i + 1]?.assenza}
+                selected={selectedDay === i + 1}
+                onClick={() => toggleDay(i + 1)}
                 index={i}
               />
             ))}
           </div>
           {/* Legenda */}
           <div className="flex items-center gap-1.5 mt-3 justify-end">
+            <div
+              className="w-3 h-3 rounded-sm"
+              style={{ background: ASSENZA_BG }}
+            />
+            <span
+              className="text-[10px] mr-2"
+              style={{ color: "var(--text-faint)" }}
+            >
+              Assenza
+            </span>
             <span
               className="text-[10px]"
               style={{ color: "var(--text-faint)" }}

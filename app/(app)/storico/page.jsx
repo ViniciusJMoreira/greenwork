@@ -1,5 +1,6 @@
 "use client";
 import { useState, useMemo, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Trash2,
@@ -420,12 +421,17 @@ function ConfirmDialog({ record, onConfirm, onCancel, loading = false }) {
 export default function StoricoPage() {
   const { turni, rimuoviTurno, aggiornaTurno, cantieri, lavori } = useApp();
 
+  // ?giorno=YYYY-MM-DD (dal calendario presenze) → mostra solo quel giorno
+  const giornoParam = useSearchParams().get("giorno");
+  const giorno = /^\d{4}-\d{2}-\d{2}$/.test(giornoParam ?? "") ? giornoParam : "";
+
   const [selectedMese, setSelectedMese] = useState(() => {
+    if (giorno) return giorno.slice(0, 7);
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   });
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const [startDate, setStartDate] = useState(giorno);
+  const [endDate, setEndDate] = useState(giorno);
   const [selectedCantiere, setSelectedCantiere] = useState("all");
   const [selectedLavoro, setSelectedLavoro] = useState("all");
   const [open, setOpen] = useState(false);
